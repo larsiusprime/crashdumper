@@ -33,7 +33,6 @@ class Main extends Sprite {
 		bitmap.x = (stage.stageWidth - bitmap.width) / 2;
 		bitmap.y = (stage.stageHeight - bitmap.height) / 2;
 		
-		addEventListener(MouseEvent.CLICK, onClick);
 		
 		//CrashDumper stuff:
 		
@@ -46,6 +45,9 @@ class Main extends Sprite {
 		
 		var fakeConfigFile:String = Assets.getText("assets/config.xml");
 		crashDumper.session.files.set("config.xml", fakeConfigFile);
+		
+		//we're set, add event listener
+		addEventListener(MouseEvent.CLICK, onClick);
 	}
 	
 	private function onClick(m:MouseEvent)
