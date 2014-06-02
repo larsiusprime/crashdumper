@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
 	<assets path="assets/native_apps/win" rename="crashdumper/" if="windows"/>
-	<assets path="assets/native_apps/win" rename="crashdumper/" if="mac"/>
-	<assets path="assets/native_apps/win" rename="crashdumper/" if="linux"/>
+	<assets path="assets/native_apps/mac" rename="crashdumper/" if="mac"/>
+	<assets path="assets/native_apps/linux" rename="crashdumper/" if="linux"/>
 </project>
