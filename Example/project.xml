@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project>
+	
+	<meta title="Example" package="crashdumper.example" version="1.0.0" company="Level Up Labs" />
+	<app main="Main" path="Export" file="Example" />
+	
+	<source path="Source" />
+	
+	<haxelib name="openfl" />
+	<haxelib name="crashdumper" />
+	
+	<assets path="Assets" rename="assets" exclude="*.svg" />
+	<icon path="Assets/openfl.svg" />
+	
+</project>

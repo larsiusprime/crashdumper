@@ -1,0 +1,13 @@
+{
+ "name": "crashdumper",
+ "url" : "https://github.com/larsiusprime/crashdumper",
+ "license": "MIT",
+ "tags": ["crash","debug","error","log"],
+ "description": "Automated crash report generator for OpenFL apps",
+ "version": "0.0.1",
+ "releasenote": "Pre-alpha release",
+ "contributors": ["larsiusprime"],
+ "dependencies": { 
+  "openfl": "",
+ }
+}
