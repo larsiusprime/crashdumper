@@ -49,11 +49,8 @@ class SystemData
 		}
 		catch (msg:Dynamic)
 		{
-			//
 			trace("error creating SystemData : " + msg);
 		}
-		
-		trace(summary());
 	}
 	
 	public function summary():String
