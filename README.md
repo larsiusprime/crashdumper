@@ -3,6 +3,30 @@ crashdumper
 
 A cross-platform automated crash report generator/sender for Haxe/OpenFL apps.
 
+Setup
+===========
+
+  1. Install crashdumper (coming soon to haxelib, just github for now).
+     
+     Command Line:
+     ````
+     haxelib git crashdumper http://github.com/larsiusprime/crashdumper
+     ````
+  2. Include crashdumper in your project.xml:  
+     
+     ````
+     <haxelib name="crashdumper"/>
+     ````
+  3. Optionally, set one or both of these haxedefs in your project.xml (for cpp targets)  
+     
+     ````
+     <haxedef name="HXCPP_STACK_LINE" />  <!--if you want line numbers-->
+	 <haxedef name="HXCPP_STACK_TRACE"/>  <!--if you want stack traces-->
+     ````
+
+If you don't set the haxedefs, you'll still get a crashdump with a system profile, error message and some other useful info, but you won't get line numbers and a backtrace of the method call stack that led up to the error.
+
+
 Usage
 ===========
 
@@ -48,6 +72,44 @@ Paths
 
 By default will write to your program's own directory, under /logs/errors/\<SESSION_ID\>
 You can supply your own path, of course.
+
+Performance
+============
+
+Using crashdumper probably comes with a small hit to performance, but it should be much less than the difference between debug and release mode. 
+
+HXCPP_STACK_TRACE and HXCPP_STACK_LINE both come with a small hit to performance, but if you're worried about optimization, LINE is the most expensive, TRACE is relatively cheap.
+
+We still need to run performance tests to see what the actual overheads are. We would be more than happy to welcome your benchmark results with crashdumper!
+
+System profiles
+============
+
+Here's some examples of the output created by CrashDumper for different systems:
+
+Windows:
+
+    SystemData
+    {
+      OS : Windows 7 SP1
+      RAM: 8387064 KB (8 GB)
+      CPU: Intel(R) Core(TM)2 Duo CPU     E7400  @ 2.80GHz
+      GPU: ATI Radeon HD 4800 Series, driver v. 8.970.100.1100
+    }
+
+
+Linux:
+
+    SystemData
+    {
+      OS : Ubuntu 14.04 LTS (i686)
+      RAM: 4022044 KB (3.84 GB)
+      CPU: Intel(R) Core(TM) i3-2310M CPU @ 2.10GHz
+      GPU: Intel Corporation 2nd Generation Core Processor Family Integrated Graphics Controller (rev 09)
+     Advanced Micro Devices, Inc. [AMD/ATI] Whistler [Radeon HD 6630M/6650M/6750M/7670M/7690M] (rev ff)
+    , driver v. 
+    }
+
 
 
 TODO
