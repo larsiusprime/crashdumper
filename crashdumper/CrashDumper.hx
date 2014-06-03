@@ -6,10 +6,6 @@ import sys.FileSystem;
 import sys.io.File;
 import sys.io.FileOutput;
 
-
-
-
-
 /**
  * TODO:
 	 * Optionally zip up crash reports
@@ -19,6 +15,10 @@ import sys.io.FileOutput;
 /**
  * Listens for uncaught error events and then generates a comprehensive crash report.
  * Works best on native (windows/mac/linux) targets.
+ *
+ * optional: set one or both of these in your project.xml:
+ *   <haxedef name="HXCPP_STACK_LINE" />  <!--if you want line numbers-->
+ *   <haxedef name="HXCPP_STACK_TRACE"/>  <!--if you want stack traces-->
  * 
  * usage 1: var c = new CrashDumper("unique_str_id",true);
  * -->on crash: dumps a report & closes the app.
