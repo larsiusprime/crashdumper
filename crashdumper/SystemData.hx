@@ -42,7 +42,16 @@ class SystemData
 				runProcess("crashdumper/cpu.bat", [], processCPU);
 				runProcess("crashdumper/gpu.bat", [], processGPU);
 			#elseif linux
-				//do linux stuff
+				// must set file to executable first
+				runProcess("chmod", [ "a+x","crashdumper/os.sh"], dummy);
+				runProcess("chmod", [ "a+x","crashdumper/memory.sh"], dummy);
+				runProcess("chmod", [ "a+x","crashdumper/cpu.sh"], dummy);
+				runProcess("chmod", [ "a+x","crashdumper/gpu.sh"], dummy);
+				
+				runProcess("crashdumper/os.sh", [], processOS);
+				runProcess("crashdumper/memory.sh", [], processMemory);
+				runProcess("crashdumper/cpu.sh", [], processCPU);
+				runProcess("crashdumper/gpu.sh", [], processGPU);
 			#elseif mac
 				//do mac stuff
 			#end
@@ -54,6 +63,11 @@ class SystemData
 		}
 		
 		trace(summary());
+	}
+	
+	private function dummy(line:String):Void
+	{
+	// this is because runprocess() must accept function
 	}
 	
 	public function summary():String
@@ -157,7 +171,7 @@ class SystemData
 				default:			osName = "Windows (unknown version)";
 			}
 		#elseif linux
-			//do linux stuff
+			osName = line;
 		#elseif mac
 			//do mac stuff
 		#end
@@ -182,6 +196,8 @@ class SystemData
 				totalMemory = Std.parseInt(line);
 			}
 		#elseif linux
+			trace(line);
+			totalMemory = Std.parseInt(line);
 			//do linux stuff
 		#elseif mac
 			//do mac stuff
@@ -196,7 +212,8 @@ class SystemData
 				cpuName = stripWord(line, "Name=");
 			}
 		#elseif linux
-			//do linux stuff
+			//trace(line);
+			cpuName = stripWord(line,"\n");
 		#elseif mac
 			//do mac stuff
 		#end
@@ -220,6 +237,9 @@ class SystemData
 				}
 			}
 		#elseif linux
+			//trace(line);
+			gpuName = line;
+			gpuDriverVersion = "";
 			//do linux stuff
 		#elseif mac
 			//do mac stuff
