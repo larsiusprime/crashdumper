@@ -12,4 +12,7 @@
 	<assets path="Assets" rename="assets" exclude="*.svg" />
 	<icon path="Assets/openfl.svg" />
 	
+	<haxedef name="HXCPP_STACK_LINE"/>
+	<haxedef name="HXCPP_STACK_TRACE"/>
+	
 </project>

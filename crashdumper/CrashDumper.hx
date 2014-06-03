@@ -1,10 +1,12 @@
 package crashdumper;
 import haxe.CallStack;
+import haxe.PosInfos;
 import openfl.events.UncaughtErrorEvent;
 import openfl.Lib;
 import sys.FileSystem;
 import sys.io.File;
 import sys.io.FileOutput;
+
 
 /**
  * TODO:
@@ -42,6 +44,9 @@ class CrashDumper
 	private static var endl:String = "\n";
 	private static var sl:String = "/";
 	
+	private var SHOW_LINES:Bool = true;
+	private var SHOW_STACK:Bool = true;
+	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
 	 * @param	sessionId		a unique string identifier for this session
@@ -62,6 +67,15 @@ class CrashDumper
 		
 		endl = SystemData.endl();
 		sl = SystemData.slash();
+		
+		#if cpp
+			#if !HXCPP_STACK_LINE
+				SHOW_LINES = false;
+			#end
+			#if !HXCPP_STACK_TRACE
+				SHOW_STACK = false;
+			#end
+		#end
 		
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
 	}
@@ -107,10 +121,14 @@ class CrashDumper
 	 */
 	
 	private function crashStr(errorData:Dynamic):String {
-		return "--------------------------------------" + endl + 
+		var str:String = "--------------------------------------" + endl + 
 		"crashed:\t" + Date.now().toString() + endl + 
-		"error:\t\t" + errorData + endl + 
-		"stack:" + endl + getStackTrace() + endl;
+		"error:\t\t" + errorData + endl;// + 
+		if (SHOW_STACK)
+		{
+			str += "stack:" + endl + getStackTrace() + endl;
+		}
+		return str;
 	}
 	
 	private function getStackTrace():String
@@ -209,8 +227,11 @@ class CrashDumper
 					str = printStackItem(itm) + " (";
 				}
 				str += file;
-				str += " line ";
-				str += line;
+				if (SHOW_LINES)
+				{
+					str += " line ";
+					str += line;
+				}
 				if (itm != null) str += ")";
 			case Method(cname,meth):
 				str += (cname);
