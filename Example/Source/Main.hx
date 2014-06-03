@@ -56,7 +56,7 @@ class Main extends Sprite {
 		
 		nullReference();
 		//invalidCast();
-		//stackOverflow();
+		//stackOverflow(0);
 		//memoryLeak();
 		//infiniteLoop();
 	}
@@ -80,9 +80,9 @@ class Main extends Sprite {
 		b.clone();
 	}
 	
-	private function stackOverflow():Void
+	private function stackOverflow(X:Int):Int
 	{
-		stackOverflow();
+		return 1 + stackOverflow(X);
 	}
 	
 	private function memoryLeak():Void

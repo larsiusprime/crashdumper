@@ -27,6 +27,13 @@ import sys.io.FileOutput;
  * -->on crash: dumps a report & calls myCrashMethod
  * 
  * All you need to do is instantiate it, preferably at the beginning of your app, and you only need one.
+ *  
+ * NOTE: crashdumper automatically sets these (required) haxedefs via it's include.xml:
+ *   <haxedef name="safeMode"/>
+ *   <haxedef name="HXCPP_CHECK_POINTER"/>
+ * 
+ * "safeMode" causes UncaughtErrorEvents to properly fire even in release mode, and 
+ *  CHECK_POINTER forces null pointer crashes to fire errors in release mode.
  * 
  * @author larsiusprime
  */

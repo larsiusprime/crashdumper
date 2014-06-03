@@ -116,7 +116,7 @@ class SystemData
 			var p:Process = null;
 			try
 			{
-				p = new Process(commandStr, commandArgs);	//just returns output from "ver" command
+				p = new Process(commandStr, commandArgs);
 			}
 			catch (msg:String)
 			{
@@ -168,21 +168,14 @@ class SystemData
 				default:			osName = "Windows (unknown version)";
 			}
 		#elseif linux
-			//osName = line;
 			var temp = line.split("\n");
-			osName = temp[0] + " ("+temp[1]+")";
+			if (temp != null && temp.length >= 2)
+			{
+				osName = temp[0] + " (" + temp[1] + ")";
+			}
 		#elseif mac
 			//do mac stuff
 		#end
-	}
-	
-	private function stripWord(line:String, word:String):String
-	{
-		while (line.indexOf(word) != -1)
-		{
-			line = StringTools.replace(line, word, "");
-		}
-		return line;
 	}
 	
 	private function processMemory(line:String):Void
@@ -196,7 +189,6 @@ class SystemData
 			}
 		#elseif linux
 			totalMemory = Std.parseInt(line);
-			//do linux stuff
 		#elseif mac
 			//do mac stuff
 		#end
@@ -235,8 +227,7 @@ class SystemData
 			}
 		#elseif linux
 			gpuName = line;
-			gpuDriverVersion = "";
-			//do linux stuff
+			gpuDriverVersion = "unknown";
 		#elseif mac
 			//do mac stuff
 		#end
@@ -256,6 +247,15 @@ class SystemData
 			return "\\";
 		#end
 		return "/";
+	}
+	
+	private function stripWord(line:String, word:String):String
+	{
+		while (line.indexOf(word) != -1)
+		{
+			line = StringTools.replace(line, word, "");
+		}
+		return line;
 	}
 	
 	private function stripEndLines(str:String):String
