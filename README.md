@@ -13,6 +13,7 @@ Setup
      haxelib git crashdumper http://github.com/larsiusprime/crashdumper
      ````
   2. Include crashdumper in your project.xml:  
+     
      ````
      <haxelib name="crashdumper"/>
      ````
