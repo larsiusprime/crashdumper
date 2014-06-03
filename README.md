@@ -49,6 +49,35 @@ Paths
 By default will write to your program's own directory, under /logs/errors/\<SESSION_ID\>
 You can supply your own path, of course.
 
+Cross-Platform
+============
+
+Here's some examples of the output created by CrashDumper for different systems:
+
+Windows:
+
+    SystemData
+    {
+      OS : Windows 7 SP1
+      RAM: 8387064 KB (8 GB)
+      CPU: Intel(R) Core(TM)2 Duo CPU     E7400  @ 2.80GHz
+      GPU: ATI Radeon HD 4800 Series, driver v. 8.970.100.1100
+    }
+
+
+Linux:
+
+    SystemData
+    {
+      OS : Ubuntu 14.04 LTS (i686)
+      RAM: 4022044 KB (3.84 GB)
+      CPU: Intel(R) Core(TM) i3-2310M CPU @ 2.10GHz
+      GPU: Intel Corporation 2nd Generation Core Processor Family Integrated Graphics Controller (rev 09)
+     Advanced Micro Devices, Inc. [AMD/ATI] Whistler [Radeon HD 6630M/6650M/6750M/7670M/7690M] (rev ff)
+    , driver v. 
+    }
+
+
 
 TODO
 =============
