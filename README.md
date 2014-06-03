@@ -115,7 +115,7 @@ Linux:
 TODO
 =============
 
- - SystemData processing for Mac & Linux (pull requests welcome!)
+ - SystemData processing for Mac & ~~Linux~~ (pull requests welcome!)
  - Ability to zip up crash reports
  - Ability to email crash reports to the developer or send to a web server
  - Ability to store custom data (such as HaxeFlixel replays) for super advanced crash reporting.
