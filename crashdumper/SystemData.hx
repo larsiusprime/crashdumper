@@ -171,7 +171,9 @@ class SystemData
 				default:			osName = "Windows (unknown version)";
 			}
 		#elseif linux
-			osName = line;
+			//osName = line;
+			var temp = line.split("\n");
+			osName = temp[0] + " ("+temp[1]+")";
 		#elseif mac
 			//do mac stuff
 		#end
@@ -196,7 +198,6 @@ class SystemData
 				totalMemory = Std.parseInt(line);
 			}
 		#elseif linux
-			trace(line);
 			totalMemory = Std.parseInt(line);
 			//do linux stuff
 		#elseif mac
@@ -212,7 +213,6 @@ class SystemData
 				cpuName = stripWord(line, "Name=");
 			}
 		#elseif linux
-			//trace(line);
 			cpuName = stripWord(line,"\n");
 		#elseif mac
 			//do mac stuff
@@ -237,7 +237,6 @@ class SystemData
 				}
 			}
 		#elseif linux
-			//trace(line);
 			gpuName = line;
 			gpuDriverVersion = "";
 			//do linux stuff
