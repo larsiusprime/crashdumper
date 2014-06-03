@@ -49,7 +49,7 @@ Paths
 By default will write to your program's own directory, under /logs/errors/\<SESSION_ID\>
 You can supply your own path, of course.
 
-Cross-Platform
+System profiles
 ============
 
 Here's some examples of the output created by CrashDumper for different systems:
