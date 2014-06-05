@@ -5,6 +5,7 @@
 	<assets path="assets/native_apps/linux" rename="crashdumper/" if="linux"/>
 	
 	<haxedef name="safeMode"/>
+	<haxedef name="crashdumper"/>
 	<haxedef name="HXCPP_CHECK_POINTER"/>
 	
 </project>

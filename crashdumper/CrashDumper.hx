@@ -40,7 +40,8 @@ import sys.io.FileOutput;
 class CrashDumper
 {
 	public var closeOnCrash:Bool;
-	public var crashMethod:CrashDumper->Void;
+	public var postCrashMethod:CrashDumper->Void;
+	public var customDataMethod:CrashDumper->Void;
 	
 	public var session:SessionData;
 	public var system:SystemData;
@@ -50,24 +51,26 @@ class CrashDumper
 	public static inline var PATH_APPDATA:String = "%APPDATA%";		//your app's applicationStorageDirectory
 	public static inline var PATH_DOC:String = "%DOCUMENTS%";		//the user's Documents directory
 	
-	private static var endl:String = "\n";
-	private static var sl:String = "/";
+	public static var endl:String = "\n";
+	public static var sl:String = "/";
 	
 	private var SHOW_LINES:Bool = true;
 	private var SHOW_STACK:Bool = true;
 	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
-	 * @param	sessionId		a unique string identifier for this session
-	 * @param	path			where you want crash dumps to be saved (defaults to same directory as executable)
-	 * @param	closeOnCrash_	whether or not to close after a crash dump is created
-	 * @param	crashMethod_	method to call after a crash dump is created if closeOnCrash is false
+	 * @param	sessionId			a unique string identifier for this session
+	 * @param	path				where you want crash dumps to be saved (defaults to same directory as executable)
+	 * @param	customDataMethod_	method to call BEFORE a crash dump is created, so you can modify the crashDump object before it outputs
+	 * @param	closeOnCrash_		whether or not to close after a crash dump is created
+	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
 	 */
 	
-	public function new(sessionId_:String,?path_:String,closeOnCrash_:Bool=true,?crashMethod_:CrashDumper->Void) 
+	public function new(sessionId_:String,?path_:String,closeOnCrash_:Bool=true,?customDataMethod_:CrashDumper->Void,?postCrashMethod_:CrashDumper->Void) 
 	{
 		closeOnCrash = closeOnCrash_;
-		crashMethod = crashMethod_;
+		postCrashMethod = postCrashMethod_;
+		customDataMethod = customDataMethod_;
 		
 		path = path_;
 		
@@ -107,6 +110,123 @@ class CrashDumper
 		}
 		path = str;
 		return path;
+	}
+	
+	/***THE BIG ERROR FUNCTION***/
+	
+	private function onErrorEvent(e:Dynamic):Void
+	{
+		doErrorStuff(e);			//easy to separately override
+		
+		if (closeOnCrash)
+		{
+			#if sys
+				Sys.exit(1);
+			#end
+		}
+		else
+		{
+			if (postCrashMethod != null)
+			{
+				postCrashMethod(this);
+			}
+		}
+	}
+	
+	private function doErrorStuff(e:Dynamic):Void
+	{
+		var pathLog:String = path + "log" + sl;						//  path/to/log/
+		var pathLogErrors:String = pathLog + sl + "errors" + sl;	//  path/to/log/errors/
+		
+		var errorMessage:String = "";
+			errorMessage = systemStr();
+			errorMessage = endlConcat(errorMessage, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
+			errorMessage = endlConcat(errorMessage, crashStr(e.error));
+		
+		if (customDataMethod != null)
+		{
+			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
+		}
+		
+		#if sys
+			if (!FileSystem.exists(pathLog))
+			{
+				FileSystem.createDirectory(pathLog);
+			}
+			if (!FileSystem.exists(pathLogErrors))
+			{
+				FileSystem.createDirectory(pathLogErrors);
+			}
+			
+			var logdir:String = session.id + "_CRASH";							//directory name for this crash
+			
+			var counter:Int = 0;
+			var failsafe:Int = 999;
+			while (FileSystem.exists(pathLogErrors + logdir) && failsafe > 0)
+			{
+				//if the session ID is not unique for some reason, append numbers until it is
+				logdir = session.id + "_CRASH_" + counter;
+				counter++;
+				failsafe--;
+			}
+			
+			FileSystem.createDirectory(pathLogErrors + logdir);
+			
+			if (FileSystem.exists(pathLogErrors + logdir))
+			{
+				//write out the error message
+				var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
+				f.writeString(errorMessage);
+				f.close();
+				
+				//write out all our associated game session files
+				for (filename in session.files.keys())
+				{
+					var filecontent:String = session.files.get(filename);
+					if (filecontent != "" && filecontent != null)
+					{
+						logFile(pathLogErrors + logdir + sl + filename, filecontent);
+					}
+				}
+			}
+		#end
+	}
+	
+	/**
+	 * Concats 2 strings with an endl between them if str1 != ""
+	 * @param	filename
+	 * @param	content
+	 */
+	
+	private function endlConcat(str1:String, str2:String):String
+	{
+		if (str1 != "")
+		{
+			return str1 + endl + str2;
+		}
+		return str1 + str2;
+	}
+	
+	
+	/*****THESE FUNCTIONS ARE SEPARATED OUT BELOW SO THAT THEY ARE EASY TO OVERRIDE IN SUBCLASSES*****/
+	
+	#if sys
+		private function logFile(filename:String, content:String):Void
+		{
+			var f = File.write(filename);
+			f.writeString(content);
+			f.close();
+		}
+	#end
+	
+	
+	/**
+	 * Outputs basic information about the user's system
+	 * @return
+	 */
+	
+	private function systemStr():String {
+		return system.summary();
 	}
 	
 	/**
@@ -151,76 +271,6 @@ class CrashDumper
 			stackTrace += printStackItem(item) + endl;
 		}
 		return stackTrace;
-	}
-	
-	private function onErrorEvent(e:Dynamic):Void
-	{
-		var pathLog:String = path + "log" + sl;						//  path/to/log/
-		var pathLogErrors:String = pathLog + sl + "errors" + sl;	//  path/to/log/errors/
-		
-		var errorMessage:String = 
-			system.summary() + endl + 		//we separate the output into three blocks so it's easy to override them with your own customized output
-			sessionStr() + endl + 
-			crashStr(e.error) + endl;
-		
-		#if sys
-			if (!FileSystem.exists(pathLog))
-			{
-				FileSystem.createDirectory(pathLog);
-			}
-			if (!FileSystem.exists(pathLogErrors))
-			{
-				FileSystem.createDirectory(pathLogErrors);
-			}
-			
-			var logdir:String = session.id + "_CRASH";							//directory name for this crash
-			
-			var counter:Int = 0;
-			var failsafe:Int = 999;
-			while (FileSystem.exists(pathLogErrors + logdir) && failsafe > 0)
-			{
-				//if the session ID is not unique for some reason, append numbers until it is
-				logdir = session.id + "_CRASH_" + counter;
-				counter++;
-				failsafe--;
-			}
-			
-			FileSystem.createDirectory(pathLogErrors + logdir);
-			
-			if (FileSystem.exists(pathLogErrors + logdir))
-			{
-				//write out the error message
-				var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
-				f.writeString(errorMessage);
-				f.close();
-				
-				//write out all our associated game session files
-				for (filename in session.files.keys())
-				{
-					var filecontent:String = session.files.get(filename);
-					if (filecontent != "" && filecontent != null)
-					{
-						f = File.write(pathLogErrors + logdir + sl + filename);
-						f.writeString(filecontent);
-						f.close();
-					}
-				}
-			}
-		#end
-		
-		if (closeOnCrash)
-		{
-			#if sys
-				Sys.exit(1);
-			#end
-		}
-		else
-		{
-			if (crashMethod != null)
-			{
-				crashMethod(this);
-			}
-		}
 	}
 	
 	private function printStackItem(itm:StackItem):String
