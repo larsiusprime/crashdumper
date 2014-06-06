@@ -54,6 +54,10 @@ class CrashDumper
 	public static var endl:String = "\n";
 	public static var sl:String = "/";
 	
+	private var theError:Dynamic;
+	
+	public var uniqueErrorLogPath(default, null):String;
+	
 	private var SHOW_LINES:Bool = true;
 	private var SHOW_STACK:Bool = true;
 	
@@ -118,6 +122,8 @@ class CrashDumper
 	{
 		doErrorStuff(e);			//easy to separately override
 		
+		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
+		
 		if (closeOnCrash)
 		{
 			#if sys
@@ -135,13 +141,12 @@ class CrashDumper
 	
 	private function doErrorStuff(e:Dynamic):Void
 	{
-		var pathLog:String = path + "log" + sl;						//  path/to/log/
-		var pathLogErrors:String = pathLog + sl + "errors" + sl;	//  path/to/log/errors/
+		theError = e;
 		
-		var errorMessage:String = "";
-			errorMessage = systemStr();
-			errorMessage = endlConcat(errorMessage, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
-			errorMessage = endlConcat(errorMessage, crashStr(e.error));
+		var pathLog:String = path + "log" + sl;						//  path/to/log/
+		var pathLogErrors:String = pathLog + "errors" + sl;			//  path/to/log/errors/
+		
+		var errorMessage:String = errorMessageStr();
 		
 		if (customDataMethod != null)
 		{
@@ -174,6 +179,7 @@ class CrashDumper
 			
 			if (FileSystem.exists(pathLogErrors + logdir))
 			{
+				uniqueErrorLogPath = pathLogErrors + logdir;
 				//write out the error message
 				var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
 				f.writeString(errorMessage);
@@ -209,6 +215,20 @@ class CrashDumper
 	
 	
 	/*****THESE FUNCTIONS ARE SEPARATED OUT BELOW SO THAT THEY ARE EASY TO OVERRIDE IN SUBCLASSES*****/
+	
+	/**
+	 * Returns the error message that will be output
+	 * @return
+	 */
+	
+	public function errorMessageStr():String
+	{
+		var str:String = "";
+		str = systemStr();
+		str = endlConcat(str, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
+		str = endlConcat(str, crashStr(theError.error));
+		return str;
+	}
 	
 	#if sys
 		private function logFile(filename:String, content:String):Void

@@ -249,7 +249,20 @@ class SystemData
 		return "/";
 	}
 	
-	private function stripWord(line:String, word:String):String
+	public static function replaceWord(line:String, word:String, replace:String):String
+	{
+		if (word == replace)
+		{
+			return line;
+		}
+		while (line.indexOf(word) != -1)
+		{
+			line = StringTools.replace(line, word, replace);
+		}
+		return line;
+	}
+	
+	public static function stripWord(line:String, word:String):String
 	{
 		while (line.indexOf(word) != -1)
 		{
@@ -258,14 +271,14 @@ class SystemData
 		return line;
 	}
 	
-	private function stripEndLines(str:String):String
+	public static function stripEndLines(str:String):String
 	{
 		str = stripWord(str, "\n");
 		str = stripWord(str, "\r");
 		return str;
 	}
 	
-	private function stripWhiteSpace(str:String):String
+	public static function stripWhiteSpace(str:String):String
 	{
 		str = stripWord(str, " ");
 		str = stripWord(str, "\t");
