@@ -272,10 +272,39 @@ class CrashDumper
 	private function crashStr(errorData:Dynamic):String {
 		var str:String = "--------------------------------------" + endl + 
 		"crashed:\t" + Date.now().toString() + endl + 
-		"error:\t\t" + errorData + endl;// + 
+		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl + 
+		"error:\t\t" + errorData + endl;
 		if (SHOW_STACK)
 		{
 			str += "stack:" + endl + getStackTrace() + endl;
+		}
+		return str;
+	}
+	
+	private function getTimeStr(ms:Float):String
+	{
+		var seconds:Int = 0;
+		var minutes:Int = 0;
+		var hours:Int = 0;
+		
+		var seconds:Int = Std.int(ms / 1000);
+		if (seconds > 60) {
+			minutes = Std.int(seconds / 60);
+			seconds = seconds % 60;
+			if (minutes > 60) {
+				  hours = Std.int(minutes / 60);
+				minutes = minutes % 60;
+			}
+		}
+		return padDigit(hours, 2) + ":" + padDigit(minutes, 2) + ":" + padDigit(seconds, 2);
+	}
+	
+	private function padDigit(i:Int, digits:Int):String
+	{
+		var str:String = Std.string(i);
+		while (str.length < digits)
+		{
+			str = "0" + str;
 		}
 		return str;
 	}
