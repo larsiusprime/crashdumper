@@ -6,10 +6,6 @@ import sys.FileSystem;
 import sys.io.File;
 import sys.io.FileOutput;
 
-
-
-
-
 /**
  * TODO:
 	 * Optionally zip up crash reports
@@ -19,6 +15,10 @@ import sys.io.FileOutput;
 /**
  * Listens for uncaught error events and then generates a comprehensive crash report.
  * Works best on native (windows/mac/linux) targets.
+ *
+ * optional: set one or both of these in your project.xml:
+ *   <haxedef name="HXCPP_STACK_LINE" />  <!--if you want line numbers-->
+ *   <haxedef name="HXCPP_STACK_TRACE"/>  <!--if you want stack traces-->
  * 
  * usage 1: var c = new CrashDumper("unique_str_id",true);
  * -->on crash: dumps a report & closes the app.
@@ -27,13 +27,21 @@ import sys.io.FileOutput;
  * -->on crash: dumps a report & calls myCrashMethod
  * 
  * All you need to do is instantiate it, preferably at the beginning of your app, and you only need one.
+ *  
+ * NOTE: crashdumper automatically sets these (required) haxedefs via it's include.xml:
+ *   <haxedef name="safeMode"/>
+ *   <haxedef name="HXCPP_CHECK_POINTER"/>
+ * 
+ * "safeMode" causes UncaughtErrorEvents to properly fire even in release mode, and 
+ *  CHECK_POINTER forces null pointer crashes to fire errors in release mode.
  * 
  * @author larsiusprime
  */
 class CrashDumper
 {
 	public var closeOnCrash:Bool;
-	public var crashMethod:CrashDumper->Void;
+	public var postCrashMethod:CrashDumper->Void;
+	public var customDataMethod:CrashDumper->Void;
 	
 	public var session:SessionData;
 	public var system:SystemData;
@@ -43,21 +51,30 @@ class CrashDumper
 	public static inline var PATH_APPDATA:String = "%APPDATA%";		//your app's applicationStorageDirectory
 	public static inline var PATH_DOC:String = "%DOCUMENTS%";		//the user's Documents directory
 	
-	private static var endl:String = "\n";
-	private static var sl:String = "/";
+	public static var endl:String = "\n";
+	public static var sl:String = "/";
+	
+	private var theError:Dynamic;
+	
+	public var uniqueErrorLogPath(default, null):String;
+	
+	private var SHOW_LINES:Bool = true;
+	private var SHOW_STACK:Bool = true;
 	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
-	 * @param	sessionId		a unique string identifier for this session
-	 * @param	path			where you want crash dumps to be saved (defaults to same directory as executable)
-	 * @param	closeOnCrash_	whether or not to close after a crash dump is created
-	 * @param	crashMethod_	method to call after a crash dump is created if closeOnCrash is false
+	 * @param	sessionId			a unique string identifier for this session
+	 * @param	path				where you want crash dumps to be saved (defaults to same directory as executable)
+	 * @param	customDataMethod_	method to call BEFORE a crash dump is created, so you can modify the crashDump object before it outputs
+	 * @param	closeOnCrash_		whether or not to close after a crash dump is created
+	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
 	 */
 	
-	public function new(sessionId_:String,?path_:String,closeOnCrash_:Bool=true,?crashMethod_:CrashDumper->Void) 
+	public function new(sessionId_:String,?path_:String,closeOnCrash_:Bool=true,?customDataMethod_:CrashDumper->Void,?postCrashMethod_:CrashDumper->Void) 
 	{
 		closeOnCrash = closeOnCrash_;
-		crashMethod = crashMethod_;
+		postCrashMethod = postCrashMethod_;
+		customDataMethod = customDataMethod_;
 		
 		path = path_;
 		
@@ -66,6 +83,15 @@ class CrashDumper
 		
 		endl = SystemData.endl();
 		sl = SystemData.slash();
+		
+		#if cpp
+			#if !HXCPP_STACK_LINE
+				SHOW_LINES = false;
+			#end
+			#if !HXCPP_STACK_TRACE
+				SHOW_STACK = false;
+			#end
+		#end
 		
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
 	}
@@ -90,55 +116,42 @@ class CrashDumper
 		return path;
 	}
 	
-	/**
-	 * Outputs basic information about the app session, including app name, version, session ID, and session start time
-	 * @return
-	 */
-	
-	private function sessionStr():String {
-		return "--------------------------------------" + endl + 
-		"filename:\t" + session.fileName + endl + 
-		"package:\t" + session.packageName + endl + 
-		"version:\t" + session.version + endl + 
-		"session ID:\t" + session.id + endl + 
-		"started:\t" + session.startTime.toString();
-	}
-	
-	/**
-	 * Outputs information about the crash itself, including error message, crash time, and stack trace
-	 * @param	errorData	the .error parameter from the object passed in to onErrorEvent
-	 * @return
-	 */
-	
-	private function crashStr(errorData:Dynamic):String {
-		return "--------------------------------------" + endl + 
-		"crashed:\t" + Date.now().toString() + endl + 
-		"error:\t\t" + errorData + endl + 
-		"stack:" + endl + getStackTrace() + endl;
-	}
-	
-	private function getStackTrace():String
-	{
-		var stack:Array<StackItem> = CallStack.exceptionStack();
-		var stackTrace:String = "";
-		stack.reverse();
-		var item:StackItem;
-		for (item in stack)
-		{
-			stackTrace += printStackItem(item) + endl;
-		}
-		return stackTrace;
-	}
+	/***THE BIG ERROR FUNCTION***/
 	
 	private function onErrorEvent(e:Dynamic):Void
 	{
-		var pathLog:String = path + "log" + sl;						//  path/to/log/
-		var pathLogErrors:String = pathLog + sl + "errors" + sl;	//  path/to/log/errors/
+		doErrorStuff(e);			//easy to separately override
 		
-		var errorMessage:String = 
-			system.summary() + endl + 		//we separate the output into three blocks so it's easy to override them with your own customized output
-			sessionStr() + endl + 
-			crashStr(e.error) + endl;
+		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
+		
+		if (closeOnCrash)
+		{
+			#if sys
+				Sys.exit(1);
+			#end
+		}
+		else
+		{
+			if (postCrashMethod != null)
+			{
+				postCrashMethod(this);
+			}
+		}
+	}
+	
+	private function doErrorStuff(e:Dynamic):Void
+	{
+		theError = e;
+		
+		var pathLog:String = path + "log" + sl;						//  path/to/log/
+		var pathLogErrors:String = pathLog + "errors" + sl;			//  path/to/log/errors/
+		
+		var errorMessage:String = errorMessageStr();
+		
+		if (customDataMethod != null)
+		{
+			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
+		}
 		
 		#if sys
 			if (!FileSystem.exists(pathLog))
@@ -166,6 +179,7 @@ class CrashDumper
 			
 			if (FileSystem.exists(pathLogErrors + logdir))
 			{
+				uniqueErrorLogPath = pathLogErrors + logdir;
 				//write out the error message
 				var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
 				f.writeString(errorMessage);
@@ -177,27 +191,135 @@ class CrashDumper
 					var filecontent:String = session.files.get(filename);
 					if (filecontent != "" && filecontent != null)
 					{
-						f = File.write(pathLogErrors + logdir + sl + filename);
-						f.writeString(filecontent);
-						f.close();
+						logFile(pathLogErrors + logdir + sl + filename, filecontent);
 					}
 				}
 			}
 		#end
-		
-		if (closeOnCrash)
+	}
+	
+	/**
+	 * Concats 2 strings with an endl between them if str1 != ""
+	 * @param	filename
+	 * @param	content
+	 */
+	
+	private function endlConcat(str1:String, str2:String):String
+	{
+		if (str1 != "")
 		{
-			#if sys
-				Sys.exit(1);
-			#end
+			return str1 + endl + str2;
 		}
-		else
+		return str1 + str2;
+	}
+	
+	
+	/*****THESE FUNCTIONS ARE SEPARATED OUT BELOW SO THAT THEY ARE EASY TO OVERRIDE IN SUBCLASSES*****/
+	
+	/**
+	 * Returns the error message that will be output
+	 * @return
+	 */
+	
+	public function errorMessageStr():String
+	{
+		var str:String = "";
+		str = systemStr();
+		str = endlConcat(str, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
+		str = endlConcat(str, crashStr(theError.error));
+		return str;
+	}
+	
+	#if sys
+		private function logFile(filename:String, content:String):Void
 		{
-			if (crashMethod != null)
-			{
-				crashMethod(this);
+			var f = File.write(filename);
+			f.writeString(content);
+			f.close();
+		}
+	#end
+	
+	
+	/**
+	 * Outputs basic information about the user's system
+	 * @return
+	 */
+	
+	private function systemStr():String {
+		return system.summary();
+	}
+	
+	/**
+	 * Outputs basic information about the app session, including app name, version, session ID, and session start time
+	 * @return
+	 */
+	
+	private function sessionStr():String {
+		return "--------------------------------------" + endl + 
+		"filename:\t" + session.fileName + endl + 
+		"package:\t" + session.packageName + endl + 
+		"version:\t" + session.version + endl + 
+		"session ID:\t" + session.id + endl + 
+		"started:\t" + session.startTime.toString();
+	}
+	
+	/**
+	 * Outputs information about the crash itself, including error message, crash time, and stack trace
+	 * @param	errorData	the .error parameter from the object passed in to onErrorEvent
+	 * @return
+	 */
+	
+	private function crashStr(errorData:Dynamic):String {
+		var str:String = "--------------------------------------" + endl + 
+		"crashed:\t" + Date.now().toString() + endl + 
+		"duration:\t" + getTimeStr((Date.now().getTime()-session.startTime.getTime())) + endl + 
+		"error:\t\t" + errorData + endl;
+		if (SHOW_STACK)
+		{
+			str += "stack:" + endl + getStackTrace() + endl;
+		}
+		return str;
+	}
+	
+	private function getTimeStr(ms:Float):String
+	{
+		var seconds:Int = 0;
+		var minutes:Int = 0;
+		var hours:Int = 0;
+		
+		var seconds:Int = Std.int(ms / 1000);
+		if (seconds > 60) {
+			minutes = Std.int(seconds / 60);
+			seconds = seconds % 60;
+			if (minutes > 60) {
+				  hours = Std.int(minutes / 60);
+				minutes = minutes % 60;
 			}
 		}
+		return padDigit(hours, 2) + ":" + padDigit(minutes, 2) + ":" + padDigit(seconds, 2);
+	}
+	
+	private function padDigit(i:Int, digits:Int):String
+	{
+		var str:String = Std.string(i);
+		while (str.length < digits)
+		{
+			str = "0" + str;
+		}
+		return str;
+	}
+	
+	private function getStackTrace():String
+	{
+		var stack:Array<StackItem> = CallStack.exceptionStack();
+		var stackTrace:String = "";
+		stack.reverse();
+		var item:StackItem;
+		for (item in stack)
+		{
+			stackTrace += printStackItem(item) + endl;
+		}
+		return stackTrace;
 	}
 	
 	private function printStackItem(itm:StackItem):String
@@ -213,8 +335,11 @@ class CrashDumper
 					str = printStackItem(itm) + " (";
 				}
 				str += file;
-				str += " line ";
-				str += line;
+				if (SHOW_LINES)
+				{
+					str += " line ";
+					str += line;
+				}
 				if (itm != null) str += ")";
 			case Method(cname,meth):
 				str += (cname);

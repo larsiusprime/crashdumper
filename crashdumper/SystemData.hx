@@ -58,11 +58,8 @@ class SystemData
 		}
 		catch (msg:Dynamic)
 		{
-			//
 			trace("error creating SystemData : " + msg);
 		}
-		
-		trace(summary());
 	}
 	
 	private function dummy(line:String):Void
@@ -119,7 +116,7 @@ class SystemData
 			var p:Process = null;
 			try
 			{
-				p = new Process(commandStr, commandArgs);	//just returns output from "ver" command
+				p = new Process(commandStr, commandArgs);
 			}
 			catch (msg:String)
 			{
@@ -171,21 +168,14 @@ class SystemData
 				default:			osName = "Windows (unknown version)";
 			}
 		#elseif linux
-			//osName = line;
 			var temp = line.split("\n");
-			osName = temp[0] + " ("+temp[1]+")";
+			if (temp != null && temp.length >= 2)
+			{
+				osName = temp[0] + " (" + temp[1] + ")";
+			}
 		#elseif mac
 			//do mac stuff
 		#end
-	}
-	
-	private function stripWord(line:String, word:String):String
-	{
-		while (line.indexOf(word) != -1)
-		{
-			line = StringTools.replace(line, word, "");
-		}
-		return line;
 	}
 	
 	private function processMemory(line:String):Void
@@ -199,7 +189,6 @@ class SystemData
 			}
 		#elseif linux
 			totalMemory = Std.parseInt(line);
-			//do linux stuff
 		#elseif mac
 			//do mac stuff
 		#end
@@ -238,8 +227,7 @@ class SystemData
 			}
 		#elseif linux
 			gpuName = line;
-			gpuDriverVersion = "";
-			//do linux stuff
+			gpuDriverVersion = "unknown";
 		#elseif mac
 			//do mac stuff
 		#end
@@ -261,14 +249,36 @@ class SystemData
 		return "/";
 	}
 	
-	private function stripEndLines(str:String):String
+	public static function replaceWord(line:String, word:String, replace:String):String
+	{
+		if (word == replace)
+		{
+			return line;
+		}
+		while (line.indexOf(word) != -1)
+		{
+			line = StringTools.replace(line, word, replace);
+		}
+		return line;
+	}
+	
+	public static function stripWord(line:String, word:String):String
+	{
+		while (line.indexOf(word) != -1)
+		{
+			line = StringTools.replace(line, word, "");
+		}
+		return line;
+	}
+	
+	public static function stripEndLines(str:String):String
 	{
 		str = stripWord(str, "\n");
 		str = stripWord(str, "\r");
 		return str;
 	}
 	
-	private function stripWhiteSpace(str:String):String
+	public static function stripWhiteSpace(str:String):String
 	{
 		str = stripWord(str, " ");
 		str = stripWord(str, "\t");

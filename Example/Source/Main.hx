@@ -52,8 +52,51 @@ class Main extends Sprite {
 	
 	private function onClick(m:MouseEvent)
 	{
-		//Intentional crash:
+		//Intentional crash, pick your poison:
+		
+		nullReference();
+		//invalidCast();
+		//stackOverflow(0);
+		//memoryLeak();
+		//infiniteLoop();
+	}
+	
+	private function doNothing():Void
+	{
+		//do nothing
+	}
+	
+	private function infiniteLoop():Void
+	{
+		while (true)
+		{
+			doNothing();
+		}
+	}
+	
+	private function nullReference():Void
+	{
 		var b:BitmapData = null;
 		b.clone();
+	}
+	
+	private function stackOverflow(X:Int):Int
+	{
+		return 1 + stackOverflow(X);
+	}
+	
+	private function memoryLeak():Void
+	{
+		var a:Array<Int> = [1, 2, 3];
+		while (true)
+		{
+			a.push(123);
+		}
+	}
+	
+	private function invalidCast():Void
+	{
+		var crazy:Map<String, Array<Bool>> = new Map<String, Array<Bool>>();
+		var sprite:Sprite = cast(crazy, Sprite);
 	}
 }
