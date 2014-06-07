@@ -1,10 +1,16 @@
 package crashdumper;
 import haxe.CallStack;
 import openfl.Lib;
-import openfl.events.UncaughtErrorEvent;
-import sys.FileSystem;
-import sys.io.File;
-import sys.io.FileOutput;
+import haxe.Http;
+#if (windows || mac || linux)
+	import openfl.events.UncaughtErrorEvent;
+	import sys.FileSystem;
+	import sys.io.File;
+	import sys.io.FileOutput;
+#elseif flash
+	import flash.events.UncaughtErrorEvent;
+	import flash.system.Security;
+#end
 
 /**
  * TODO:
@@ -60,6 +66,7 @@ class CrashDumper
 	
 	private var SHOW_LINES:Bool = true;
 	private var SHOW_STACK:Bool = true;
+	private static var request:haxe.Http;
 	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
@@ -94,35 +101,65 @@ class CrashDumper
 		#end
 		
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
+		var url = "http://localhost:8080/result";
+
+		request = new haxe.Http(url);
+		request.onData   = onData;
+		request.onError  = onError;
+		request.onStatus = onStatus;
+
+
 	}
+	
+	private static function onData(msg:String) {
+		// trigger when HTTP return results
+	}
+
+	private static function onError(msg:String) {
+		// trigger when HTTP error
+	}
+
+	private static function onStatus(val:Int) {
+		// trigger when HTTP return status (200,501,403,etc)
+	}	
+
 	
 	public function set_path(str:String):String
 	{
-		switch(str)
-		{
-			case null: str = "";
-			case "%APPDATA%": str = flash.filesystem.File.applicationStorageDirectory.nativePath;
-			case "%DOCUMENTS%": str = flash.filesystem.File.documentsDirectory.nativePath;
-		}
-		if (str != "")
-		{
-			if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
+		#if (windows || mac || linux)
+			switch(str)
 			{
-				//if the path is not blank, and the last character is not a slash
-				str = str + SystemData.slash();	//add a trailing slash
+				case null: str = "";
+				case "%APPDATA%": str = flash.filesystem.File.applicationStorageDirectory.nativePath;
+				case "%DOCUMENTS%": str = flash.filesystem.File.documentsDirectory.nativePath;
 			}
-		}
+			if (str != "")
+			{
+				if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
+				{
+					//if the path is not blank, and the last character is not a slash
+					str = str + SystemData.slash();	//add a trailing slash
+				}
+			}
+		#end
 		path = str;
 		return path;
+		
 	}
 	
 	/***THE BIG ERROR FUNCTION***/
 	
 	private function onErrorEvent(e:Dynamic):Void
 	{
-		doErrorStuff(e);			//easy to separately override
+		#if (windows || mac || linux)
+			doErrorStuff(e);			//easy to separately override
+		#end
 		
+		#if flash
+			doErrorStuffByHTTP(e);
+		#end
 		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
+		
 		
 		if (closeOnCrash)
 		{
@@ -139,6 +176,15 @@ class CrashDumper
 		}
 	}
 	
+	
+	private function doErrorStuffByHTTP(e:Dynamic):Void
+	{	
+		theError = e;
+		var errorMessage:String = errorMessageStr();
+		request.setParameter("result",errorMessage);
+		request.request(true);
+	}
+	
 	private function doErrorStuff(e:Dynamic):Void
 	{
 		theError = e;
@@ -148,10 +194,15 @@ class CrashDumper
 		
 		var errorMessage:String = errorMessageStr();
 		
+		request.setParameter("result",errorMessage);
+		request.request(true);		
+		
 		if (customDataMethod != null)
 		{
 			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
 		}
+		
+		
 		
 		#if sys
 			if (!FileSystem.exists(pathLog))

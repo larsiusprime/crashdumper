@@ -1,7 +1,8 @@
 package crashdumper;
 import openfl.Lib;
-import sys.io.Process;
-
+#if (windows || mac || linux)
+	import sys.io.Process;
+#end
 /**
  * A simple data structure that represents a single "session" of using your program from start to finish.
  * Traditionally this means from right at the beginning of your program, as soon as you're done bootstrapping the most basic information.
@@ -24,10 +25,12 @@ class SessionData
 		{
 			id = generateID();
 		}
-		fileName = Lib.file;
-		packageName = Lib.packageName;
-		version = Lib.version;
-		files = new Map<String,String>();
+		#if (windows || mac || linux)
+			fileName = Lib.file;
+			packageName = Lib.packageName;
+			version = Lib.version;
+			files = new Map<String,String>();
+		#end
 		startTime = Date.now();
 	}
 	
