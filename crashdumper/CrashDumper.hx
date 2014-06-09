@@ -1,4 +1,5 @@
 package crashdumper;
+import flash.display.Stage;
 import haxe.CallStack;
 import openfl.Lib;
 import haxe.Http;
@@ -77,7 +78,11 @@ class CrashDumper
 	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
 	 */
 	
-	public function new(sessionId_:String,?path_:String,closeOnCrash_:Bool=true,?customDataMethod_:CrashDumper->Void,?postCrashMethod_:CrashDumper->Void) 
+	#if flash
+	public function new(sessionId_:String, ?stage_:Stage, ?path_:String, closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void)
+	#else
+	public function new(sessionId_:String, ?path_:String, closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void) 
+	#end
 	{
 		closeOnCrash = closeOnCrash_;
 		postCrashMethod = postCrashMethod_;
@@ -85,7 +90,11 @@ class CrashDumper
 		
 		path = path_;
 		
+		#if flash
+		session = new SessionData(sessionId_, stage_);
+		#else
 		session = new SessionData(sessionId_);
+		#end
 		system = new SystemData();
 		
 		endl = SystemData.endl();
@@ -101,14 +110,13 @@ class CrashDumper
 		#end
 		
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
+		
 		var url = "http://localhost:8080/result";
-
+		
 		request = new haxe.Http(url);
 		request.onData   = onData;
 		request.onError  = onError;
 		request.onStatus = onStatus;
-
-
 	}
 	
 	private static function onData(msg:String) {
@@ -158,8 +166,8 @@ class CrashDumper
 		#if flash
 			doErrorStuffByHTTP(e);
 		#end
-		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
 		
+		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
 		
 		if (closeOnCrash)
 		{
@@ -277,7 +285,11 @@ class CrashDumper
 		var str:String = "";
 		str = systemStr();
 		str = endlConcat(str, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
-		str = endlConcat(str, crashStr(theError.error));
+		#if flash
+			str = endlConcat(str, crashStr(theError));
+		#else
+			str = endlConcat(str, crashStr(theError.error));
+		#end
 		return str;
 	}
 	
@@ -308,9 +320,11 @@ class CrashDumper
 	private function sessionStr():String {
 		return "--------------------------------------" + endl + 
 		"filename:\t" + session.fileName + endl + 
-		"package:\t" + session.packageName + endl + 
-		"version:\t" + session.version + endl + 
-		"session ID:\t" + session.id + endl + 
+		#if !flash
+			"package:\t" + session.packageName + endl + 
+			"version:\t" + session.version + endl + 
+		#end
+		"sess. ID:\t" + session.id + endl + 
 		"started:\t" + session.startTime.toString();
 	}
 	
@@ -327,7 +341,11 @@ class CrashDumper
 		"error:\t\t" + errorData + endl;
 		if (SHOW_STACK)
 		{
-			str += "stack:" + endl + getStackTrace() + endl;
+			#if sys
+				str += "stack:" + endl + getStackTrace() + endl;
+			#elseif flash
+				str += "stack:" + endl + errorData.error.getStackTrace() + endl;
+			#end
 		}
 		return str;
 	}
@@ -362,8 +380,8 @@ class CrashDumper
 	
 	private function getStackTrace():String
 	{
-		var stack:Array<StackItem> = CallStack.exceptionStack();
 		var stackTrace:String = "";
+		var stack:Array<StackItem> = CallStack.exceptionStack();
 		stack.reverse();
 		var item:StackItem;
 		for (item in stack)

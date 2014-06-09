@@ -24,6 +24,11 @@ class SystemData
 	public var gpuName:String;			//the name of your gpu, -- "ATI Radeon HD 4800 Series"
 	public var gpuDriverVersion:String;	//version number of gpu driver, -- "8.970.100.1100"
 	
+	#if flash
+	public var playerVersion:String;	//version number of the flash player, ie "WIN 12,0,0,77"
+	public var playerType:String;
+	#end
+	
 	public function new() 
 	{
 		#if windows
@@ -38,10 +43,11 @@ class SystemData
 			os = "ios";
 		#elseif flash
 			osName = flash.system.Capabilities.os + " (flash)";
-			osVersion = flash.system.Capabilities.version; 
+			playerType = flash.system.Capabilities.playerType;
+			playerVersion = flash.system.Capabilities.version; 
 			cpuName = flash.system.Capabilities.cpuArchitecture;
 			totalMemory = 0;
-			gpuName = "unknown. Hardware Accelerated:"+flash.system.Capabilities.avHardwareDisable;
+			gpuName = "unknown";
 			gpuDriverVersion = "unknown";
 		#end
 		
@@ -81,6 +87,15 @@ class SystemData
 	
 	public function summary():String
 	{
+		#if flash
+		return "SystemData" + endl() + 
+		"{" + endl() + 
+		"   OS: " + osName + endl() + 
+		"FLASH: " + playerType + " v. " + playerVersion + endl() + 
+		"  CPU: " + cpuName + endl() +
+		"}";
+		#else
+		
 		return "SystemData" + endl() + 
 		"{" + endl() + 
 		"  OS : " + osName + endl() + 
@@ -88,6 +103,7 @@ class SystemData
 		"  CPU: " + cpuName + endl() +
 		"  GPU: " + gpuName + ", driver v. " + gpuDriverVersion + endl() +
 		"}";
+		#end
 	}
 	
 	public function toString():String
@@ -98,6 +114,10 @@ class SystemData
 		"  osRaw: " + osRaw + "\n" +
 		"  osName: " + osName + "\n" + 
 		"  osVersion: " + osVersion + "\n" + 
+		#if flash
+		"  playerType: " + playerType + "\n" + 
+		"  playerVersion: " + playerVersion + "\n" +
+		#end
 		"  totalMemory: " + totalMemory + "\n" +
 		"  cpuName: " + cpuName + "\n" +
 		"  gpuName: " + gpuName + "\n" +

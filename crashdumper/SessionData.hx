@@ -1,4 +1,5 @@
 package crashdumper;
+import flash.display.Stage;
 import openfl.Lib;
 #if (windows || mac || linux)
 	import sys.io.Process;
@@ -18,7 +19,12 @@ class SessionData
 	public var files:Map<String,String>;		// backup of all necessary data files as they were at the session start, indexed by filename
 												// ->for games, this could be the user's save + config data
 												// ->for apps, this could be the user's preferences or other config data
+												
+	#if flash
+	public function new(id_:String,stage_:Stage)
+	#else
 	public function new(id_:String) 
+	#end
 	{
 		id = id_;
 		if (id == null || id == "")
@@ -29,8 +35,10 @@ class SessionData
 			fileName = Lib.file;
 			packageName = Lib.packageName;
 			version = Lib.version;
-			files = new Map<String,String>();
+		#elseif flash
+			fileName = stage_.loaderInfo.url;
 		#end
+		files = new Map<String,String>();
 		startTime = Date.now();
 	}
 	

@@ -1,6 +1,5 @@
 package;
 
-
 import crashdumper.CrashDumper;
 import crashdumper.SessionData;
 import flash.display.Bitmap;
@@ -41,7 +40,11 @@ class Main extends Sprite {
 		//CrashDumper stuff:
 		
 		var unique_id:String = SessionData.generateID("example_app_");
-		var crashDumper = new CrashDumper(unique_id);
+		#if flash
+			var crashDumper = new CrashDumper(unique_id, stage);
+		#else
+			var crashDumper = new CrashDumper(unique_id);
+		#end
 		
 		//Here is where you would load your config and/or save data from file
 		//(in this example, we just grab a fake config.xml from assets, 
