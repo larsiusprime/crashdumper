@@ -116,4 +116,4 @@ TODO
 =============
 
  - SystemData processing for Mac (pull requests welcome!)
- - More [server-side implementations](http://github.com/larsiusprime/crashdumper/servers)
+ - More [server-side implementations](https://github.com/larsiusprime/crashdumper/tree/master/servers)
