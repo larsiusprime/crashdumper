@@ -53,7 +53,8 @@ class CrashDumper
 	public var session:SessionData;
 	public var system:SystemData;
 	
-	public var path(default,set):String;
+	public var path(default, set):String;
+	public var url(default, set):String;
 	
 	public static inline var PATH_APPDATA:String = "%APPDATA%";		//your app's applicationStorageDirectory
 	public static inline var PATH_DOC:String = "%DOCUMENTS%";		//the user's Documents directory
@@ -67,21 +68,25 @@ class CrashDumper
 	
 	private var SHOW_LINES:Bool = true;
 	private var SHOW_STACK:Bool = true;
+	
+	private var CACHED_STACK_TRACE:String = "";
+	
 	private static var request:haxe.Http;
 	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
 	 * @param	sessionId			a unique string identifier for this session
 	 * @param	path				where you want crash dumps to be saved (defaults to same directory as executable)
+	 * @param	url					url you want to send the crash dump to. If empty or null, no connection is made.
 	 * @param	customDataMethod_	method to call BEFORE a crash dump is created, so you can modify the crashDump object before it outputs
 	 * @param	closeOnCrash_		whether or not to close after a crash dump is created
 	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
 	 */
 	
 	#if flash
-	public function new(sessionId_:String, ?stage_:Stage, ?path_:String, closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void)
+	public function new(sessionId_:String, ?stage_:Stage, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void)
 	#else
-	public function new(sessionId_:String, ?path_:String, closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void) 
+	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void) 
 	#end
 	{
 		closeOnCrash = closeOnCrash_;
@@ -111,12 +116,8 @@ class CrashDumper
 		
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
 		
-		var url = "http://localhost:8080/result";
-		
-		request = new haxe.Http(url);
-		request.onData   = onData;
-		request.onError  = onError;
-		request.onStatus = onStatus;
+		//set url to "http://localhost:8080/result" for local connections
+		url = url_;
 	}
 	
 	private static function onData(msg:String) {
@@ -130,7 +131,23 @@ class CrashDumper
 	private static function onStatus(val:Int) {
 		// trigger when HTTP return status (200,501,403,etc)
 	}	
-
+	
+	public function set_url(str:String):String
+	{
+		url = str;
+		if (url != "" && url != null)
+		{
+			if (request == null)
+			{
+				request = new haxe.Http(url);
+				request.onData   = onData;
+				request.onError  = onError;
+				request.onStatus = onStatus;
+			}
+			request.url = str;
+		}
+		return url;
+	}
 	
 	public function set_path(str:String):String
 	{
@@ -159,6 +176,8 @@ class CrashDumper
 	
 	private function onErrorEvent(e:Dynamic):Void
 	{
+		CACHED_STACK_TRACE = getStackTrace();
+		
 		#if (windows || mac || linux)
 			doErrorStuff(e);			//easy to separately override
 		#end
@@ -202,8 +221,11 @@ class CrashDumper
 		
 		var errorMessage:String = errorMessageStr();
 		
-		request.setParameter("result",errorMessage);
-		request.request(true);		
+		if (request != null)
+		{
+			request.setParameter("result",errorMessage);
+			request.request(true);
+		}
 		
 		if (customDataMethod != null)
 		{
@@ -342,7 +364,7 @@ class CrashDumper
 		if (SHOW_STACK)
 		{
 			#if sys
-				str += "stack:" + endl + getStackTrace() + endl;
+				str += "stack:" + endl + CACHED_STACK_TRACE + endl;
 			#elseif flash
 				str += "stack:" + endl + errorData.error.getStackTrace() + endl;
 			#end
