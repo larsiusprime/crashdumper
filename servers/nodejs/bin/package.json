@@ -1,0 +1,13 @@
+{
+  "name": "logger",
+  "main": "index.html",
+  "window": {
+    "title": "logger",
+    "toolbar": false,
+    "frame": true,
+	"fullscreen":false,
+    "width": 640,
+    "height": 480,
+	"show": true
+  }  
+}

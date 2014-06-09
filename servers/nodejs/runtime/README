@@ -1,0 +1,6 @@
+include node-webkit runtime in respected folder
+
+./runtime/linux-32
+./runtime/linux-64
+./runtime/windows
+./runtime/osx

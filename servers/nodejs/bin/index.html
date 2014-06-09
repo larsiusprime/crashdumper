@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Crashdumper Logger</title>
+		<meta charset="utf-8">
+		
+		<script src="./js/jquery-2.0.3.min.js"></script>
+		<script src="./js/watcher.js"></script>
+		
+		<script>
+		data = {result:{}};
+		var restify = require('restify');
+
+		var server = restify.createServer({
+		  name: 'myapp',
+		  version: '1.0.0'
+		});
+		server.use(restify.acceptParser(server.acceptable));
+		server.use(restify.queryParser());
+		server.use(restify.bodyParser());
+
+
+		server.get('crossdomain.xml', function (req, res, next) {
+		  //res.send(req.params);
+		  res.send('<?xml version="1.0"?><cross-domain-policy><allow-access-from domain="*" /></cross-domain-policy>');
+		  //sessionStorage.result = JSON.stringify(req.params);
+		  //data['result'] = JSON.stringify(req.params);
+		  return next();
+		});
+		
+		
+
+		
+		
+		server.post('/result', function (req, res, next) {
+		  data['result'] = req.params;
+          res.send("<?xml version=\"1.0\"?>\n<!DOCTYPE cross-domain-policy SYSTEM \"/xml/dtds/cross-domain-policy.dtd\">\n<cross-domain-policy><allow-access-from domain=\"*\" to-ports=\"*\" /></cross-domain-policy>");
+		  return next();
+		});		
+
+		server.listen(8080, function () {
+		  console.log('%s listening at %s', server.name, server.url);
+		});
+
+
+watcher = function(propertyName, oldValue, newValue){
+console.log("changed!");
+var _output = data.result.result;
+_output = _output.replace(/\n/g,"<br>");
+_output = _output.replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;");
+$("#log_position").prepend("<p>"+_output+"<p>");
+ };
+
+watch(data, 'result', watcher);
+		
+		</script>
+	</head>
+		
+	<body>
+		<h2>Communicate with Crashdumper via web RESTful API</h2>
+		<p>
+			<b>http://localhost:8080/result</b>
+			<br/>
+			accept : result [POST method]
+		</p>
+		<div id="log_position">
+		</div>
+	</body>	
+	
+</html>
+
