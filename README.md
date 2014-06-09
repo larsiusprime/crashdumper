@@ -23,6 +23,8 @@ Setup
      <haxedef name="HXCPP_STACK_LINE" />  <!--if you want line numbers-->
 	 <haxedef name="HXCPP_STACK_TRACE"/>  <!--if you want stack traces-->
      ````
+     On flash target, stack traces will only be generated in a debug player.
+
 
 If you don't set the haxedefs, you'll still get a crashdump with a system profile, error message and some other useful info, but you won't get line numbers and a backtrace of the method call stack that led up to the error.
 
@@ -115,7 +117,14 @@ Linux:
     , driver v. 
     }
 
+Flash:
 
+    SystemData
+    {
+      OS: Windows 7 (flash)
+      FLASH: StandAlone v. WIN 13,0,0,214
+      CPU: x86
+    }
 
 TODO
 =============
