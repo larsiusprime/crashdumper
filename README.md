@@ -67,6 +67,11 @@ It will generate something like this:
 
 You may optionally also cache data files (such as a user/player's save game data and/or application config data) at that moment, and the crash report will include verbatim copies of those save files. You can use this to generate a crash report that includes as much data as possible about the user's starting conditions.
 
+Server-Side
+============
+
+CrashDumper can be hooked up to a server-side listener that process and/or stores crash dumps. We are happy to receive any such implementations as pull requests, [you can find them all here](https://github.com/larsiusprime/crashdumper/tree/master/servers).
+
 Paths
 ============
 
