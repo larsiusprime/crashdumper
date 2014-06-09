@@ -9,7 +9,11 @@ import flash.display.Sprite;
 import haxe.CallStack;
 import openfl.Assets;
 import openfl.events.MouseEvent;
-import openfl.events.UncaughtErrorEvent;
+#if (windows || mac || linux)
+	import openfl.events.UncaughtErrorEvent;
+#elseif flash
+	import flash.events.UncaughtErrorEvent;
+#end
 import openfl.Lib;
 import openfl.text.TextField;
 
@@ -42,9 +46,10 @@ class Main extends Sprite {
 		//Here is where you would load your config and/or save data from file
 		//(in this example, we just grab a fake config.xml from assets, 
 		//but you should load them from wherever your app stores them)
-		
-		var fakeConfigFile:String = Assets.getText("assets/config.xml");
-		crashDumper.session.files.set("config.xml", fakeConfigFile);
+		#if (windows || mac || linux)
+			var fakeConfigFile:String = Assets.getText("assets/config.xml");
+			crashDumper.session.files.set("config.xml", fakeConfigFile);
+		#end
 		
 		//we're set, add event listener
 		addEventListener(MouseEvent.CLICK, onClick);

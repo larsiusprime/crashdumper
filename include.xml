@@ -7,5 +7,5 @@
 	<haxedef name="safeMode"/>
 	<haxedef name="crashdumper"/>
 	<haxedef name="HXCPP_CHECK_POINTER"/>
-	
+	<haxedef name="network-sandbox" />
 </project>

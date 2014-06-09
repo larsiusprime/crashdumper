@@ -2,6 +2,9 @@ package crashdumper;
 #if sys
 	import sys.io.Process;
 #end
+#if flash
+	import flash.system.Capabilities;
+#end
 
 /**
  * A simple data structure that records data about the user's system.
@@ -33,7 +36,16 @@ class SystemData
 			os = "android";
 		#elseif ios
 			os = "ios";
+		#elseif flash
+			osName = flash.system.Capabilities.os + " (flash)";
+			osVersion = flash.system.Capabilities.version; 
+			cpuName = flash.system.Capabilities.cpuArchitecture;
+			totalMemory = 0;
+			gpuName = "unknown. Hardware Accelerated:"+flash.system.Capabilities.avHardwareDisable;
+			gpuDriverVersion = "unknown";
 		#end
+		
+		
 		
 		try {
 			#if windows
