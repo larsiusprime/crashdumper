@@ -115,7 +115,7 @@ class CrashDumper
 		#end
 		
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
-		
+		untyped __global__.__hxcpp_set_critical_error_handler(onCriticalErrorEvent);
 		//set url to "http://localhost:8080/result" for local connections
 		url = url_;
 	}
@@ -173,7 +173,7 @@ class CrashDumper
 	}
 	
 	/***THE BIG ERROR FUNCTION***/
-	
+	private function onCriticalErrorEvent(message:String):Void {throw message;}
 	private function onErrorEvent(e:Dynamic):Void
 	{
 		CACHED_STACK_TRACE = getStackTrace();
