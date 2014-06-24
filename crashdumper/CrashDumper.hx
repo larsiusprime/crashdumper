@@ -64,6 +64,7 @@ class CrashDumper
 	
 	private var theError:Dynamic;
 	
+	public var pathLogErrors(default, null):String;
 	public var uniqueErrorLogPath(default, null):String;
 	
 	private var SHOW_LINES:Bool = true;
@@ -212,16 +213,20 @@ class CrashDumper
 		request.request(true);
 	}
 	
-	private function doErrorStuff(e:Dynamic):Void
+	private function doErrorStuff(e:Dynamic,transmitData:Bool=true):Void
 	{
+		trace("doErrorStuff()");
 		theError = e;
 		
-		var pathLog:String = path + "log" + sl;						//  path/to/log/
-		var pathLogErrors:String = pathLog + "errors" + sl;			//  path/to/log/errors/
+		var pathLog:String = path + "log" + sl;				//  path/to/log/
+		pathLogErrors = pathLog + "errors" + sl;			//  path/to/log/errors/
+		
+		trace("pathLog = " + pathLog);
+		trace("pathLogErrors = " + pathLogErrors);
 		
 		var errorMessage:String = errorMessageStr();
 		
-		if (request != null)
+		if (request != null && transmitData)
 		{
 			request.setParameter("result",errorMessage);
 			request.request(true);
@@ -232,47 +237,48 @@ class CrashDumper
 			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
 		}
 		
-		
-		
 		#if sys
-			if (!FileSystem.exists(pathLog))
+			if (transmitData)
 			{
-				FileSystem.createDirectory(pathLog);
-			}
-			if (!FileSystem.exists(pathLogErrors))
-			{
-				FileSystem.createDirectory(pathLogErrors);
-			}
-			
-			var logdir:String = session.id + "_CRASH";							//directory name for this crash
-			
-			var counter:Int = 0;
-			var failsafe:Int = 999;
-			while (FileSystem.exists(pathLogErrors + logdir) && failsafe > 0)
-			{
-				//if the session ID is not unique for some reason, append numbers until it is
-				logdir = session.id + "_CRASH_" + counter;
-				counter++;
-				failsafe--;
-			}
-			
-			FileSystem.createDirectory(pathLogErrors + logdir);
-			
-			if (FileSystem.exists(pathLogErrors + logdir))
-			{
-				uniqueErrorLogPath = pathLogErrors + logdir;
-				//write out the error message
-				var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
-				f.writeString(errorMessage);
-				f.close();
-				
-				//write out all our associated game session files
-				for (filename in session.files.keys())
+				if (!FileSystem.exists(pathLog))
 				{
-					var filecontent:String = session.files.get(filename);
-					if (filecontent != "" && filecontent != null)
+					FileSystem.createDirectory(pathLog);
+				}
+				if (!FileSystem.exists(pathLogErrors))
+				{
+					FileSystem.createDirectory(pathLogErrors);
+				}
+				
+				var logdir:String = session.id + "_CRASH";							//directory name for this crash
+				
+				var counter:Int = 0;
+				var failsafe:Int = 999;
+				while (FileSystem.exists(pathLogErrors + logdir) && failsafe > 0)
+				{
+					//if the session ID is not unique for some reason, append numbers until it is
+					logdir = session.id + "_CRASH_" + counter;
+					counter++;
+					failsafe--;
+				}
+				
+				FileSystem.createDirectory(pathLogErrors + logdir);
+				
+				if (FileSystem.exists(pathLogErrors + logdir))
+				{
+					uniqueErrorLogPath = pathLogErrors + logdir;
+					//write out the error message
+					var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
+					f.writeString(errorMessage);
+					f.close();
+					
+					//write out all our associated game session files
+					for (filename in session.files.keys())
 					{
-						logFile(pathLogErrors + logdir + sl + filename, filecontent);
+						var filecontent:String = session.files.get(filename);
+						if (filecontent != "" && filecontent != null)
+						{
+							logFile(pathLogErrors + logdir + sl + filename, filecontent);
+						}
 					}
 				}
 			}

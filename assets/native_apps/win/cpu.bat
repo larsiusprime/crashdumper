@@ -1,2 +1,2 @@
 @echo off
-wmic cpu get name /Value
+wmic cpu get name /Value <nul

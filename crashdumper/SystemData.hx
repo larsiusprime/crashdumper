@@ -164,22 +164,69 @@ class SystemData
 		#end
 	}
 	
+	private function isOneOfThese(char:String,arr:Array<String>):Bool
+	{
+		for (str in arr) {
+			if (char == str) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
 	private function processOS(line:String):Void 
 	{
+		if (line == null)
+		{
+			line = "unknown";	//avoid null error when parsing
+		}
 		#if windows
+			//ver returns something like this: "Microsoft Windows [Version 6.1.7601]", localized
+			//we wanna strip away everything but the number
+			
 			line = stripEndLines(line);
 			osRaw = line;
 			line = line.toLowerCase();
 			line = stripWhiteSpace(line);
-			line = stripWord(line, "microsoft");
-			line = stripWord(line, "windows");
-			if (line.indexOf("version") != -1)
+			
+			//chomp away everything before the "[" and after the "]"
+			if (line.indexOf("[") != -1)
 			{
-				line = stripWord(line, "version");
-				line = stripWord(line, "[");
-				line = stripWord(line, "]");
-				osVersion = line;
+				while (line.charAt(0) != "[")
+				{
+					line = line.substr(1, line.length - 1);
+				}
 			}
+			if (line.indexOf("]") != -1)
+			{
+				while (line.charAt(line.length - 1) != "]")
+				{
+					line = line.substr(0, line.length - 1);
+				}
+			}
+			
+			//now we have something like this: "[versionX.Y.Z]"
+			//where X.Y.Z are numbers and "version" is locale-specific
+			
+			//strip the "[]" chars
+			line = stripWord(line, "[");
+			line = stripWord(line, "]");
+			
+			var numAndDot:Array<String> = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."];
+			
+			//strip away all non-number and non-dot characters
+			
+			if (line.length > 0 && !isOneOfThese(line.charAt(0), numAndDot))
+			{
+				while (line.length > 0 && !isOneOfThese(line.charAt(0), numAndDot))
+				{
+					line = line.substr(1, line.length - 1);
+				}
+			}
+			
+			//now we have a string we can safely compare against known values
+			osVersion = line;
+			
 			switch(line)
 			{
 				case "3.10.103":	osName = "Windows 3.1";
@@ -230,8 +277,13 @@ class SystemData
 	{
 		#if windows
 			line = stripEndLines(line);
-			if (line.indexOf("Name=") != -1) {
+			if (line != null && line.indexOf("Name=") != -1)
+			{
 				cpuName = stripWord(line, "Name=");
+			}
+			else
+			{
+				cpuName = "unknown";
 			}
 		#elseif linux
 			cpuName = stripWord(line,"\n");
@@ -243,9 +295,13 @@ class SystemData
 	private function processGPU(line:String):Void
 	{
 		#if windows
+			gpuName = "unknown";
+			gpuDriverVersion = "unknown";
 			var arr:Array<String> = line.split(",");
-			if (arr != null && arr.length == 2) {
-				for (str in arr) {
+			if (arr != null && arr.length == 2)
+			{
+				for (str in arr)
+				{
 					str = stripEndLines(str);
 					if (str.indexOf("Name=") != -1)
 					{

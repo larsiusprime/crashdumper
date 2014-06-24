@@ -1,2 +1,2 @@
 @echo off
-wmic OS get TotalVisibleMemorySize /Value
+wmic OS get TotalVisibleMemorySize /Value <nul
