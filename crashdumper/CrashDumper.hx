@@ -115,8 +115,10 @@ class CrashDumper
 			#end
 		#end
 		
-		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent); 
+		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent);
+		#if !flash
 		untyped __global__.__hxcpp_set_critical_error_handler(onCriticalErrorEvent);
+		#end
 		//set url to "http://localhost:8080/result" for local connections
 		url = url_;
 	}
