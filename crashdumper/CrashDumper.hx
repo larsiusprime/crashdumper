@@ -1,6 +1,14 @@
 package crashdumper;
 import flash.display.Stage;
 import haxe.CallStack;
+import haxe.crypto.Crc32;
+import haxe.io.Bytes;
+import haxe.io.BytesOutput;
+import haxe.Utf8;
+import haxe.zip.Entry;
+import haxe.zip.Tools;
+import haxe.zip.Writer;
+import openfl.utils.ByteArray;
 import openfl.Lib;
 import haxe.Http;
 #if (windows || mac || linux)
@@ -123,15 +131,21 @@ class CrashDumper
 		url = url_;
 	}
 	
-	private static function onData(msg:String) {
+	private static function onData(msg:String)
+	{
+		trace("onData(" + msg + ")");
 		// trigger when HTTP return results
 	}
 
-	private static function onError(msg:String) {
+	private static function onError(msg:String)
+	{
+		trace("onError(" + msg + ")");
 		// trigger when HTTP error
 	}
 
-	private static function onStatus(val:Int) {
+	private static function onStatus(val:Int)
+	{
+		trace("onStatus(" + val + ")");
 		// trigger when HTTP return status (200,501,403,etc)
 	}	
 	
@@ -215,7 +229,7 @@ class CrashDumper
 		request.request(true);
 	}
 	
-	private function doErrorStuff(e:Dynamic,transmitData:Bool=true):Void
+	private function doErrorStuff(e:Dynamic,writeToFile:Bool=true,sendToServer:Bool=true):Void
 	{
 		trace("doErrorStuff()");
 		theError = e;
@@ -228,19 +242,15 @@ class CrashDumper
 		
 		var errorMessage:String = errorMessageStr();
 		
-		if (request != null && transmitData)
-		{
-			request.setParameter("result",errorMessage);
-			request.request(true);
-		}
-		
 		if (customDataMethod != null)
 		{
 			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
 		}
 		
+		var logdir:String = session.id + "_CRASH"; //directory name for this crash
+		
 		#if sys
-			if (transmitData)
+			if (writeToFile)
 			{
 				if (!FileSystem.exists(pathLog))
 				{
@@ -250,8 +260,6 @@ class CrashDumper
 				{
 					FileSystem.createDirectory(pathLogErrors);
 				}
-				
-				var logdir:String = session.id + "_CRASH";							//directory name for this crash
 				
 				var counter:Int = 0;
 				var failsafe:Int = 999;
@@ -285,6 +293,70 @@ class CrashDumper
 				}
 			}
 		#end
+		
+		if (sendToServer)
+		{
+			var entries:List<Entry> = new List();
+			
+			entries.add(strToZipEntry(errorMessage, "_error"));
+			
+			for (filename in session.files.keys())
+			{
+				var filecontent:String = session.files.get(filename);
+				if (filecontent != "" && filecontent != null)
+				{
+					entries.add(strToZipEntry(filecontent, filename));
+				}
+			}
+			
+			var bytesOutput = new BytesOutput();
+			var writer = new Writer(bytesOutput);
+			writer.write(entries);
+			var zipfileBytes:Bytes = bytesOutput.getBytes();
+			
+			/*if (writeToFile)
+			{
+				var f = File.write(pathLogErrors+logdir+sl+"package.zip");
+				f.writeBytes(zipfileBytes,0,zipfileBytes.length);
+				f.close();
+			
+				var zipF = File.read(pathLogErrors + logdir + sl + "package.zip");
+				//request.fileTransfer("report", "package.zip", zipF, zipfileBytes.length);
+			}*/
+			
+			trace("request = " + request);
+			trace("request.url = " + request.url);
+			trace("report = " + zipfileBytes);
+			
+			var zipString:String = zipfileBytes.getString(0, zipfileBytes.length);
+			
+			request.setHeader("Content-Type", "multipart/form-data");
+			request.setParameter("result", errorMessage);
+			request.setParameter("report", zipString);
+			request.request(true);
+		}
+	}
+	
+	private function strToZipEntry(str, fileName):Entry
+	{
+		#if flash
+			var fbytes:ByteArray = new ByteArray();
+			fbytes.writeUTFBytes(str);
+			var bytes:Bytes = cast fbytes;
+		#else
+			var bytes:ByteArray = new ByteArray();
+			bytes.writeUTFBytes(str);
+		#end
+		var entry:Entry = {
+			fileName : fileName,
+			fileSize : bytes.length,
+			fileTime : Date.now(),
+			compressed : false,
+			dataSize : 0,
+			data : bytes,
+			crc32 : Crc32.make(bytes)
+		}
+		return entry;
 	}
 	
 	/**

@@ -36,7 +36,10 @@ class SessionData
 			packageName = Lib.packageName;
 			version = Lib.version;
 		#elseif flash
-			fileName = stage_.loaderInfo.url;
+			if (stage_ != null)
+			{
+				fileName = stage_.loaderInfo.url;
+			}
 		#end
 		files = new Map<String,String>();
 		startTime = Date.now();
