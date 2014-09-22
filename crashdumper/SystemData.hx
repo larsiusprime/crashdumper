@@ -108,11 +108,7 @@ class SystemData
 		return "SystemData" + endl() + 
 		"{" + endl() + 
 		"  OS : " + osName + endl() + 
-		#if mac
-		"  RAM: " + totalMemory + " GB" + endl() +
-		#else
 		"  RAM: " + totalMemory + " KB (" + toGBStr(totalMemory) + " GB)" + endl() +
-		#end
 		"  CPU: " + cpuName + endl() +
 		"  GPU: " + gpuName + ", driver v. " + gpuDriverVersion + endl() +
 		"}";
@@ -131,7 +127,7 @@ class SystemData
 		"  playerType: " + playerType + "\n" + 
 		"  playerVersion: " + playerVersion + "\n" +
 		#end
-		"  totalMemory: " + #if !mac toGBStr(totalMemory) #else totalMemory #end + "\n" +
+		"  totalMemory: " + toGBStr(totalMemory) + "\n" +
 		"  cpuName: " + cpuName + "\n" +
 		"  gpuName: " + gpuName + "\n" +
 		"  gpuDriverVersion: " + gpuDriverVersion + "\n" +
@@ -283,7 +279,7 @@ class SystemData
 		#elseif linux
 			totalMemory = Std.parseInt(line);
 		#elseif mac
-			totalMemory = Std.parseInt(line);
+			totalMemory = Std.parseInt(line) * 1024 * 1024;
 		#end
 	}
 	
