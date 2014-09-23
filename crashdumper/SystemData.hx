@@ -19,7 +19,7 @@ class SystemData
 	public var osRaw:String;			//raw output from command-line OS identifier -- "Microsoft Windows [Version 6.1.7601]"
 	public var osName:String;			//common product name of OS -- "Windows 7", "Ubuntu 14.10", "OSX Snow Leopard", "Android KitKat"
 	public var osVersion:String;		//version number of OS -- "6.1.7601, 14.10, 10.6, 4.4" (for the above 4 examples)
-	public var totalMemory:Int;			//total visible memory, in kilobytes
+	public var totalMemory:Int;			//total visible memory, in kilobytes, except for mac where it's in gigabytes
 	public var cpuName:String;			//the name of your cpu, -- "Intel(R) Core(TM)2 Duo CPU     E7400  @ 2.80GHz"
 	public var gpuName:String;			//the name of your gpu, -- "ATI Radeon HD 4800 Series"
 	public var gpuDriverVersion:String;	//version number of gpu driver, -- "8.970.100.1100"
@@ -71,7 +71,16 @@ class SystemData
 				runProcess("crashdumper/cpu.sh", [], processCPU);
 				runProcess("crashdumper/gpu.sh", [], processGPU);
 			#elseif mac
-				//do mac stuff
+				// must set file to executable first
+				runProcess("chmod", [ "a+x","crashdumper/os.sh"], dummy);
+				runProcess("chmod", [ "a+x","crashdumper/memory.sh"], dummy);
+				runProcess("chmod", [ "a+x","crashdumper/cpu.sh"], dummy);
+				runProcess("chmod", [ "a+x","crashdumper/gpu.sh"], dummy);
+				
+				runProcess("crashdumper/os.sh", [], processOS);
+				runProcess("crashdumper/memory.sh", [], processMemory);
+				runProcess("crashdumper/cpu.sh", [], processCPU);
+				runProcess("crashdumper/gpu.sh", [], processGPU);
 			#end
 		}
 		catch (msg:Dynamic)
@@ -118,7 +127,7 @@ class SystemData
 		"  playerType: " + playerType + "\n" + 
 		"  playerVersion: " + playerVersion + "\n" +
 		#end
-		"  totalMemory: " + totalMemory + "\n" +
+		"  totalMemory: " + toGBStr(totalMemory) + "\n" +
 		"  cpuName: " + cpuName + "\n" +
 		"  gpuName: " + gpuName + "\n" +
 		"  gpuDriverVersion: " + gpuDriverVersion + "\n" +
@@ -253,7 +262,8 @@ class SystemData
 				osName = temp[0] + " (" + temp[1] + ")";
 			}
 		#elseif mac
-			//do mac stuff
+			line = stripEndLines(line);
+			osName = line;
 		#end
 	}
 	
@@ -269,7 +279,7 @@ class SystemData
 		#elseif linux
 			totalMemory = Std.parseInt(line);
 		#elseif mac
-			//do mac stuff
+			totalMemory = Std.parseInt(line) * 1024 * 1024;
 		#end
 	}
 	
@@ -288,7 +298,7 @@ class SystemData
 		#elseif linux
 			cpuName = stripWord(line,"\n");
 		#elseif mac
-			//do mac stuff
+			cpuName = stripEndLines(line);
 		#end
 	}
 	
@@ -317,7 +327,8 @@ class SystemData
 			gpuName = line;
 			gpuDriverVersion = "unknown";
 		#elseif mac
-			//do mac stuff
+			gpuName = line;
+			gpuDriverVersion = "unknown";
 		#end
 	}
 	
