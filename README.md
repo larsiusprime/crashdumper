@@ -117,6 +117,17 @@ Linux:
     , driver v. 
     }
 
+Mac:
+
+    SystemData
+    {
+      OS : OS X 10.9.2 (13C1021) iMac iMac12,2
+      RAM: 16 GB
+      CPU: Intel Core i7 3,40 GHz
+      GPU: Gainward GeForce GTX 570 1280 MB 1680 x 1050 @ 60 Hz
+    , driver v. unknown
+    }
+
 Flash:
 
     SystemData
@@ -129,5 +140,4 @@ Flash:
 TODO
 =============
 
- - SystemData processing for Mac (pull requests welcome!)
  - More [server-side implementations](https://github.com/larsiusprime/crashdumper/tree/master/servers)
