@@ -8,17 +8,14 @@ import haxe.Utf8;
 import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
+import openfl.events.UncaughtErrorEvent;
 import openfl.utils.ByteArray;
 import openfl.Lib;
 import haxe.Http;
-#if (windows || mac || linux)
-	import openfl.events.UncaughtErrorEvent;
+#if sys
 	import sys.FileSystem;
 	import sys.io.File;
 	import sys.io.FileOutput;
-#elseif flash
-	import flash.events.UncaughtErrorEvent;
-	import flash.system.Security;
 #end
 
 /**
@@ -339,6 +336,7 @@ class CrashDumper
 	
 	private function strToZipEntry(str, fileName):Entry
 	{
+		#if !html5
 		#if flash
 			var fbytes:ByteArray = new ByteArray();
 			fbytes.writeUTFBytes(str);
@@ -356,6 +354,9 @@ class CrashDumper
 			data : bytes,
 			crc32 : Crc32.make(bytes)
 		}
+		#else
+		var entry = null;
+		#end
 		return entry;
 	}
 	
