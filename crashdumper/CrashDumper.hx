@@ -167,7 +167,7 @@ class CrashDumper
 		return url;
 	}
 	
-/*	public function set_path(str:String):String
+	public function set_path(str:String):String
 	{
 		#if (windows || mac || linux || mobile)
 			switch(str)
@@ -189,7 +189,7 @@ class CrashDumper
 		return path;
 		
 	}
-*/
+
 
 	/***THE BIG ERROR FUNCTION***/
 	private function onCriticalErrorEvent(message:String):Void {throw message;}
