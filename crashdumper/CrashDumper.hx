@@ -8,6 +8,7 @@ import haxe.Utf8;
 import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
+import openfl.system.Capabilities;
 import openfl.utils.ByteArray;
 import openfl.events.UncaughtErrorEvent;
 import openfl.Lib;
@@ -62,9 +63,6 @@ class CrashDumper
 	public var path(default, set):String;
 	public var url(default, set):String;
 	
-//	public static inline var PATH_APPDATA:String = "%APPDATA%";		//your app's applicationStorageDirectory
-//	public static inline var PATH_DOC:String = "%DOCUMENTS%";		//the user's Documents directory
-	
 	public static var endl:String = "\n";
 	public static var sl:String = "/";
 	
@@ -72,6 +70,12 @@ class CrashDumper
 	
 	public var pathLogErrors(default, null):String;
 	public var uniqueErrorLogPath(default, null):String;
+	
+	public static inline var PATH_APPDATA:String = "%APPDATA%";			//The ApplicationStorageDirectory. Highly recommended.
+	public static inline var PATH_DOCUMENTS:String = "%DOCUMENTS%";		//The Documents directory.
+	public static inline var PATH_USERPROFILE:String = "%USERPROFILE%";	//The User's profile folder
+	public static inline var PATH_DESKTOP:String = "%DESKTOP%";			//The User's desktop
+	public static inline var PATH_APP:String = "%APP%";					//The Application's own directory
 	
 	private var SHOW_LINES:Bool = true;
 	private var SHOW_STACK:Bool = true;
@@ -164,15 +168,33 @@ class CrashDumper
 		return url;
 	}
 	
+	/**
+	 * Set the path to save crashdumper log files to.
+	 * NOTE: on mac/win/linux, this is an absolute path. On mobile, this is ALWAYS prepended by the applicationStorageDirectory.
+	 * @param	str
+	 * @return
+	 */
+	
 	public function set_path(str:String):String
 	{
 		#if (windows || mac || linux || mobile)
-			switch(str)
-			{
-				case null: str = "";
-				case "%APPDATA%": str = flash.filesystem.File.applicationStorageDirectory.nativePath;
-				case "%DOCUMENTS%": str = flash.filesystem.File.documentsDirectory.nativePath;
-			}
+			#if (mobile)
+				if (str.charAt(0) != "/" && str.charAt(0) != "\\")
+				{
+					str = "/" + str;
+				}
+				str = SystemPath.applicationStorageDirectory + str;
+			#else
+				switch(str)
+				{
+					case null, "": str = SystemPath.applicationStorageDirectory;
+					case PATH_APPDATA: str = SystemPath.applicationStorageDirectory;
+					case PATH_DOCUMENTS: str = SystemPath.documentsDirectory;
+					case PATH_DESKTOP: str = SystemPath.desktopDirectory;
+					case PATH_USERPROFILE: str = SystemPath.userDirectory;
+					case PATH_APP: str = SystemPath.applicationDirectory;
+				}
+			#end
 			if (str != "")
 			{
 				if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
@@ -184,9 +206,7 @@ class CrashDumper
 		#end
 		path = str;
 		return path;
-		
 	}
-
 
 	/***THE BIG ERROR FUNCTION***/
 	private function onCriticalErrorEvent(message:String):Void {throw message;}
@@ -195,7 +215,7 @@ class CrashDumper
 		CACHED_STACK_TRACE = getStackTrace();
 		
 		#if (windows || mac || linux || mobile)
-			doErrorStuff(e);			//easy to separately override
+			doErrorStuff(e);		//easy to separately override
 		#end
 		
 		#if flash
@@ -230,14 +250,19 @@ class CrashDumper
 	
 	private function doErrorStuff(e:Dynamic,writeToFile:Bool=true,sendToServer:Bool=true):Void
 	{
-		trace("doErrorStuff()");
 		theError = e;
 		
-		var pathLog:String = "/log/";				//  path/to/log/
-		pathLogErrors = pathLog + "errors/";			//  path/to/log/errors/
+		var pathLog:String = "log/";				//  path/to/log/
+		pathLogErrors = pathLog + "errors/";		//  path/to/log/errors/
 		
-//		trace("pathLog = " + pathLog);
-//		trace("pathLogErrors = " + pathLogErrors);
+		//Prepend pathLog with a slash character if the user path does not end with a slash character
+		if (path.length >= 0 && path.charAt(path.length - 1) != "/" && path.charAt(path.length - 1) != "\\")
+		{
+			pathLog = getSlash() + pathLog;
+		}
+		
+		pathLog = fixSlashes(pathLog);
+		pathLogErrors = fixSlashes(pathLogErrors);
 		
 		var errorMessage:String = errorMessageStr();
 		
@@ -251,18 +276,18 @@ class CrashDumper
 		#if sys
 			if (writeToFile)
 			{
-				if (!FileSystem.exists(SystemPath.applicationStorageDirectory + pathLog))
+				if (!FileSystem.exists(path + pathLog))
 				{
-					FileSystem.createDirectory(SystemPath.applicationStorageDirectory + pathLog);
+					FileSystem.createDirectory(path + pathLog);
 				}
-				if (!FileSystem.exists(SystemPath.applicationStorageDirectory + pathLogErrors))
+				if (!FileSystem.exists(path + pathLogErrors))
 				{
-					FileSystem.createDirectory(SystemPath.applicationStorageDirectory + pathLogErrors);
+					FileSystem.createDirectory(path + pathLogErrors);
 				}
 				
 				var counter:Int = 0;
 				var failsafe:Int = 999;
-				while (FileSystem.exists(SystemPath.applicationStorageDirectory + pathLogErrors + logdir) && failsafe > 0)
+				while (FileSystem.exists(path + pathLogErrors + logdir) && failsafe > 0)
 				{
 					//if the session ID is not unique for some reason, append numbers until it is
 					logdir = session.id + "_CRASH_" + counter + "/";
@@ -270,15 +295,17 @@ class CrashDumper
 					failsafe--;
 				}
 				
-				FileSystem.createDirectory(SystemPath.applicationStorageDirectory +pathLogErrors + logdir);
+				FileSystem.createDirectory(path + pathLogErrors + logdir);
 				
-				if (FileSystem.exists(SystemPath.applicationStorageDirectory + pathLogErrors + logdir))
+				if (FileSystem.exists(path + pathLogErrors + logdir))
 				{
-					uniqueErrorLogPath = pathLogErrors + logdir;
+					uniqueErrorLogPath = path + pathLogErrors + logdir;
 					//write out the error message
-					var f:FileOutput = File.write(SystemPath.applicationStorageDirectory + pathLogErrors + logdir + "_error.txt");
+					var f:FileOutput = File.write(path + pathLogErrors + logdir + "_error.txt");
 					f.writeString(errorMessage);
 					f.close();
+					
+					var sanityCheck:String = File.getContent(path + pathLogErrors + logdir + "_error.txt");
 					
 					//write out all our associated game session files
 					for (filename in session.files.keys())
@@ -323,9 +350,11 @@ class CrashDumper
 				//request.fileTransfer("report", "package.zip", zipF, zipfileBytes.length);
 			}*/
 			
+			/*
 			trace("request = " + request);
 			trace("request.url = " + request.url);
 			trace("report = " + zipfileBytes);
+			*/
 			
 			var zipString:String = zipfileBytes.getString(0, zipfileBytes.length);
 			
@@ -401,7 +430,7 @@ class CrashDumper
 	#if sys
 		private function logFile(filename:String, content:String):Void
 		{
-			var f = File.write(SystemPath.applicationStorageDirectory + filename);
+			var f = File.write(path + filename);
 			f.writeString(content);
 			f.close();
 		}
@@ -494,6 +523,40 @@ class CrashDumper
 			stackTrace += printStackItem(item) + endl;
 		}
 		return stackTrace;
+	}
+	
+	private inline function getSlash():String {
+		#if windows
+			return "\\";
+		#elseif flash
+			if (Capabilities.os.toLowerCase().indexOf("win") != -1)
+			{
+				return "\\";
+			}
+			else
+			{
+				return "/";
+			}
+		#else
+			return "/";
+		#end
+	}
+	
+	private function fixSlashes(str:String):String{
+		var slash:String = getSlash();
+		
+		var otherslash:String = "";
+		if (slash == "/") {
+			otherslash = "\\";
+		}else if(slash == "\\"){
+			otherslash = "/";
+		}
+		
+		//enforce operating system slash style
+		while (str.indexOf(otherslash) != -1) {
+			str = StringTools.replace(str, otherslash, slash);
+		}
+		return str;
 	}
 	
 	private function printStackItem(itm:StackItem):String
