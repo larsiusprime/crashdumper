@@ -9,16 +9,14 @@ import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
 import openfl.utils.ByteArray;
+import openfl.events.UncaughtErrorEvent;
 import openfl.Lib;
 import haxe.Http;
-#if (windows || mac || linux)
-	import openfl.events.UncaughtErrorEvent;
+#if sys
+	import openfl.utils.SystemPath;
 	import sys.FileSystem;
 	import sys.io.File;
 	import sys.io.FileOutput;
-#elseif flash
-	import flash.events.UncaughtErrorEvent;
-	import flash.system.Security;
 #end
 
 /**
@@ -64,8 +62,8 @@ class CrashDumper
 	public var path(default, set):String;
 	public var url(default, set):String;
 	
-	public static inline var PATH_APPDATA:String = "%APPDATA%";		//your app's applicationStorageDirectory
-	public static inline var PATH_DOC:String = "%DOCUMENTS%";		//the user's Documents directory
+//	public static inline var PATH_APPDATA:String = "%APPDATA%";		//your app's applicationStorageDirectory
+//	public static inline var PATH_DOC:String = "%DOCUMENTS%";		//the user's Documents directory
 	
 	public static var endl:String = "\n";
 	public static var sl:String = "/";
@@ -168,7 +166,7 @@ class CrashDumper
 	
 	public function set_path(str:String):String
 	{
-		#if (windows || mac || linux)
+		#if (windows || mac || linux || mobile)
 			switch(str)
 			{
 				case null: str = "";
@@ -188,14 +186,15 @@ class CrashDumper
 		return path;
 		
 	}
-	
+
+
 	/***THE BIG ERROR FUNCTION***/
 	private function onCriticalErrorEvent(message:String):Void {throw message;}
 	private function onErrorEvent(e:Dynamic):Void
 	{
 		CACHED_STACK_TRACE = getStackTrace();
 		
-		#if (windows || mac || linux)
+		#if (windows || mac || linux || mobile)
 			doErrorStuff(e);			//easy to separately override
 		#end
 		
@@ -234,11 +233,11 @@ class CrashDumper
 		trace("doErrorStuff()");
 		theError = e;
 		
-		var pathLog:String = path + "log" + sl;				//  path/to/log/
-		pathLogErrors = pathLog + "errors" + sl;			//  path/to/log/errors/
+		var pathLog:String = "/log/";				//  path/to/log/
+		pathLogErrors = pathLog + "errors/";			//  path/to/log/errors/
 		
-		trace("pathLog = " + pathLog);
-		trace("pathLogErrors = " + pathLogErrors);
+//		trace("pathLog = " + pathLog);
+//		trace("pathLogErrors = " + pathLogErrors);
 		
 		var errorMessage:String = errorMessageStr();
 		
@@ -247,37 +246,37 @@ class CrashDumper
 			customDataMethod(this);			//allow the user to add custom data to the CrashDumper before it outputs
 		}
 		
-		var logdir:String = session.id + "_CRASH"; //directory name for this crash
+		var logdir:String = session.id + "_CRASH/"; //directory name for this crash
 		
 		#if sys
 			if (writeToFile)
 			{
-				if (!FileSystem.exists(pathLog))
+				if (!FileSystem.exists(SystemPath.applicationStorageDirectory + pathLog))
 				{
-					FileSystem.createDirectory(pathLog);
+					FileSystem.createDirectory(SystemPath.applicationStorageDirectory + pathLog);
 				}
-				if (!FileSystem.exists(pathLogErrors))
+				if (!FileSystem.exists(SystemPath.applicationStorageDirectory + pathLogErrors))
 				{
-					FileSystem.createDirectory(pathLogErrors);
+					FileSystem.createDirectory(SystemPath.applicationStorageDirectory + pathLogErrors);
 				}
 				
 				var counter:Int = 0;
 				var failsafe:Int = 999;
-				while (FileSystem.exists(pathLogErrors + logdir) && failsafe > 0)
+				while (FileSystem.exists(SystemPath.applicationStorageDirectory + pathLogErrors + logdir) && failsafe > 0)
 				{
 					//if the session ID is not unique for some reason, append numbers until it is
-					logdir = session.id + "_CRASH_" + counter;
+					logdir = session.id + "_CRASH_" + counter + "/";
 					counter++;
 					failsafe--;
 				}
 				
-				FileSystem.createDirectory(pathLogErrors + logdir);
+				FileSystem.createDirectory(SystemPath.applicationStorageDirectory +pathLogErrors + logdir);
 				
-				if (FileSystem.exists(pathLogErrors + logdir))
+				if (FileSystem.exists(SystemPath.applicationStorageDirectory + pathLogErrors + logdir))
 				{
 					uniqueErrorLogPath = pathLogErrors + logdir;
 					//write out the error message
-					var f:FileOutput = File.write(pathLogErrors + logdir + sl + "_error.txt");
+					var f:FileOutput = File.write(SystemPath.applicationStorageDirectory + pathLogErrors + logdir + "_error.txt");
 					f.writeString(errorMessage);
 					f.close();
 					
@@ -287,7 +286,7 @@ class CrashDumper
 						var filecontent:String = session.files.get(filename);
 						if (filecontent != "" && filecontent != null)
 						{
-							logFile(pathLogErrors + logdir + sl + filename, filecontent);
+							logFile(pathLogErrors + logdir + filename, filecontent);
 						}
 					}
 				}
@@ -339,6 +338,7 @@ class CrashDumper
 	
 	private function strToZipEntry(str, fileName):Entry
 	{
+		#if !html5
 		#if flash
 			var fbytes:ByteArray = new ByteArray();
 			fbytes.writeUTFBytes(str);
@@ -356,6 +356,9 @@ class CrashDumper
 			data : bytes,
 			crc32 : Crc32.make(bytes)
 		}
+		#else
+		var entry = null;
+		#end
 		return entry;
 	}
 	
@@ -398,7 +401,7 @@ class CrashDumper
 	#if sys
 		private function logFile(filename:String, content:String):Void
 		{
-			var f = File.write(filename);
+			var f = File.write(SystemPath.applicationStorageDirectory + filename);
 			f.writeString(content);
 			f.close();
 		}
