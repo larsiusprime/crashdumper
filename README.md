@@ -77,7 +77,7 @@ CrashDumper can be hooked up to a server-side listener that process and/or store
 Paths
 ============
 
-By default will write to your program's own directory, under `/logs/errors/\<SESSION_ID\>`.
+By default will write to your program's own directory, under `/logs/errors/<SESSION_ID>`.
 You can supply your own path, of course.
 
 Performance
