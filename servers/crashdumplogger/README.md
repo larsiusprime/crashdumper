@@ -12,10 +12,11 @@ In most cases, installing Crashdump Browser is very simple.
 3. Edit line 10 of includes/db.inc.php with your database credentials. If you don't know your database credentials, contact your webhost support. If you want to use a new database, you will need to create it at this time. The installation script assumes that your credentials and database are valid.
 4. In your Internet browser, hit the URL of your new directory (e.g. http://www.example.org/crashdumpbrowser/). You should see a message indicating that the database tables were set up. If you get an error or a blank page, then check steps 2 and 3 again.
 5. _[Optional, but highly suggested]_ Alter your server config to prevent unwanted access to the logging utility. Be warned that mistakes in your configuration file can take your entire website offline! If you aren't sure what you're doing, you may want to talk to support about this step, too. Instructions on this step are outside the scope of this document, and I really don't want people blaming me for crashing their site. **WARNING:** If you skip this step, then anyone and everyone will be able to access your Crashdump Browser instance!
-6. _[Optional]_ You may want to copy report.php to another location. This will be the URL to which users send their crashdumps. If you do, then update line 6 of the copied report.php to point to the correct location. (You should leave an unaltered copy of report.php in the default directory; if you don't, then the "Manually submit report" option won't work.) Note that if you used .htaccess to restrict access to the entire directory in step 5, then you will need to perform this step, or users will be unable to submit error reports. You can check if you performed this step correctly by hitting report.php in your Internet browser. If you get a blank page or error message, then either you skipped step 4 or you performed this step incorrectly. 
-7. After step 4, a new directory called "reports" will appear in your working directory. Edit line 5 of includes/constants.inc.php with the path to the reports directory. If you must make this a relative path for some reason, the path should be relative to wherever you put report.php in step 6. If you didn't move report.php, then the relative path is simply "reports".
-8. [Optional] Check the other config options in includes/constants.inc.php and change them as desired.
-9. Configure Crashdumper to send error reports to report.php (in whatever location you put it in step 6).
+6. _[Optional]_ Customize the report submission page (starting on line 100 of report.php). By default, it is an unstyled HTML page that gives a brief success or error message. You may want to add CSS to make this page match the rest of your site.
+7. _[Optional]_ You may want to copy report.php to another location. This will be the URL to which users send their crashdumps. If you do, then update line 6 of the copied report.php to point to the correct location. (You should leave an unaltered copy of report.php in the default directory; if you don't, then the "Manually submit report" option won't work.) Note that if you used .htaccess to restrict access to the entire directory in step 5, then you will need to perform this step, or users will be unable to submit error reports. You can check if you performed this step correctly by hitting report.php in your Internet browser. If you get a blank page or error message, then either you skipped step 4 or you performed this step incorrectly. 
+8. After step 4, a new directory called "reports" will appear in your working directory. Edit line 5 of includes/constants.inc.php with the path to the reports directory. If you must make this a relative path for some reason, the path should be relative to wherever you put report.php in step 6. If you didn't move report.php, then the relative path is simply "reports".
+9. _[Optional]_ Check the other config options in includes/constants.inc.php and change them as desired.
+10. Configure Crashdumper to send error reports to report.php (in whatever location you put it in step 6).
 
 Congratulations! You are done. You can browse reports at the same URL you hit
 in step 4.
@@ -94,7 +95,7 @@ them up.
 All views
 ---------
 
-* Current Project: If MULTIPROJECT is not disabled, this will let you narrow the
+* **Current Project:** If MULTIPROJECT is not disabled, this will let you narrow the
 selection to a single project. This setting is remembered if you leave and come
 back, so if you think you're missing something, check the project dropdown.
 
@@ -111,17 +112,17 @@ After changing a filter, click "Apply filters" to see the updated view.
 Overview view
 -------------
 
-* Error ID: When a new error is received, Crashdump Browser assigns it an internal ID. For your purposes, this is used when marking an error as a duplicate (see Actions).
-* Error Count: How many times this error has been reported.
-* Status: All errors start in "New" status. You can change an error's status with the Actions menu.
-* Error Type: What kind of exception was reported.
-* Line: The file and line number where the exception occurred.
-* Function: The function where the exception originated.
-* First encountered: The timestamp of the first occurrence of this error. This is when the error was encountered, not necessarily when it was reported.
-* Last encountered: The timestamp of the most recent occurrence of this error. Again, this refers to when the error was encountered.
-* Earliest version: The lowest version number that generated a report for this error. This might be different from the version number of the first report received for this error.
-* Latest version: The highest version number that generated a report for this error. This might be different from the version number of the most recent report received for this error.
-* Actions: Allows you to change an error's status. By clicking on the checkboxes, you can change multiple statuses with the "Bulk Actions" dropdown.
+* **Error ID:** When a new error is received, Crashdump Browser assigns it an internal ID. For your purposes, this is used when marking an error as a duplicate (see Actions).
+* **Error Count:** How many times this error has been reported.
+* **Status:** All errors start in "New" status. You can change an error's status with the Actions menu.
+* **Error Type:** What kind of exception was reported.
+* **Line:** The file and line number where the exception occurred.
+* **Function:** The function where the exception originated.
+* **First encountered:** The timestamp of the first occurrence of this error. This is when the error was encountered, not necessarily when it was reported.
+* **Last encountered:** The timestamp of the most recent occurrence of this error. Again, this refers to when the error was encountered.
+* **Earliest version:** The lowest version number that generated a report for this error. This might be different from the version number of the first report received for this error.
+* **Latest version:** The highest version number that generated a report for this error. This might be different from the version number of the most recent report received for this error.
+* **Actions:** Allows you to change an error's status. By clicking on the checkboxes, you can change multiple statuses with the "Bulk Actions" dropdown.
 
 Actions
 -------
