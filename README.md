@@ -74,6 +74,8 @@ Server-Side
 
 CrashDumper can be hooked up to a server-side listener that process and/or stores crash dumps. We are happy to receive any such implementations as pull requests, [you can find them all here](https://github.com/larsiusprime/crashdumper/tree/master/servers).
 
+We specifically recommend **[Crashdump Browser](https://github.com/larsiusprime/crashdumper/tree/master/servers/crashdumpbrowser)**.
+
 Paths
 ============
 
