@@ -22,9 +22,9 @@ import haxe.io.Bytes;
  */
 class HookOpenFL implements IHookPlatform
 {
-	public var fileName(default, null):String;
-	public var packageName(default, null):String;
-	public var version(default, null):String;
+	public var fileName(default, null):String="";
+	public var packageName(default, null):String="";
+	public var version(default, null):String="";
 	
 	public static inline var PATH_APPDATA:String = "%APPDATA%";			//The ApplicationStorageDirectory. Highly recommended.
 	public static inline var PATH_DOCUMENTS:String = "%DOCUMENTS%";		//The Documents directory.
@@ -35,9 +35,11 @@ class HookOpenFL implements IHookPlatform
 	public function new() 
 	{
 		#if openfl
-			fileName = Lib.file;
-			packageName = Lib.packageName;
-			version = Lib.version;
+			#if !flash
+				fileName = Lib.file;
+				packageName = Lib.packageName;
+				version = Lib.version;
+			#end
 		#else
 			throw "OpenFL Library was not detected, using HookOpenFL is therefore impossible!";
 		#end

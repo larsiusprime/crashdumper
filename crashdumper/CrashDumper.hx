@@ -10,8 +10,6 @@ import haxe.Utf8;
 import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
-import openfl.utils.ByteArray;
-
 import haxe.Http;
 
 #if flash
@@ -76,6 +74,7 @@ class CrashDumper
 	 * @param	customDataMethod_	method to call BEFORE a crash dump is created, so you can modify the crashDump object before it outputs
 	 * @param	closeOnCrash_		whether or not to close after a crash dump is created
 	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
+	 * @param	stage_				(flash target only) the root Stage object
 	 */
 	
 	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
@@ -88,15 +87,12 @@ class CrashDumper
 		
 		path = path_;
 		
+		var data = { fileName:hook.fileName, packageName:hook.packageName, version:hook.version };
 		#if flash
-			if (stage_ == null || Std.is(stage_, Stage) == false)
-			{
-				throw "In flash target, stage_(" + stage_ +") must be not null, and must be of type flash.display.Stage!";
-			}
-			session = new SessionData(sessionId_, stage_);
-		#else
-			session = new SessionData(sessionId_);
+			data.fileName = stage_.loaderInfo.url;
 		#end
+		
+		session = new SessionData(sessionId_, data);
 		
 		system = new SystemData();
 		
@@ -187,12 +183,10 @@ class CrashDumper
 	{
 		CACHED_STACK_TRACE = getStackTrace();
 		
-		#if (windows || mac || linux || mobile)
+		#if !flash
 			doErrorStuff(e);		//easy to separately override
-		#end
-		
-		#if flash
-			doErrorStuffByHTTP(e);
+		#else
+			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
 		
 		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
@@ -280,48 +274,38 @@ class CrashDumper
 					}
 				}
 			}
+		#end
 		
-			if (sendToServer)
+		if (sendToServer)
+		{
+			var entries:List<Entry> = new List();
+			
+			var entry = strToZipEntry(errorMessage, "_error");
+			if (entry != null)
 			{
-				var entries:List<Entry> = new List();
-				
-				var entry = strToZipEntry(errorMessage, "_error");
-				if (entry != null)
+				entries.add(entry);	
+			}
+			
+			for (filename in session.files.keys())
+			{
+				var filecontent:String = session.files.get(filename);
+				if (filecontent != "" && filecontent != null)
 				{
-					entries.add(entry);
-				}
-				
-				for (filename in session.files.keys())
-				{
-					var filecontent:String = session.files.get(filename);
-					if (filecontent != "" && filecontent != null)
+					entry = strToZipEntry(filecontent, filename);
+					if(entry != null)
 					{
-						entry = strToZipEntry(filecontent, filename);
-						if(entry != null)
-						{
-							entries.add(entry);
-						}
+						entries.add(entry);
 					}
 				}
-				
-				var bytesOutput = new BytesOutput();
-				var writer = new Writer(bytesOutput);
-				writer.write(entries);
-				var zipfileBytes:Bytes = bytesOutput.getBytes();
-				
-				var zipString:String = "";
-				
-				#if (haxe_ver >= "3.1.3")
-					zipString = zipfileBytes.getString(0, zipfileBytes.length);
-				#else
-					zipString = zipfileBytes.readString(0, zipfileBytes.length);
-				#end
-				
-				var stringInput = new StringInput(zipString);
-				request.fileTransfer("report", "report.zip", stringInput, stringInput.length, "application/octet-stream");
-				request.request(true);
 			}
-		#end
+			
+			var bytesOutput = new BytesOutput();
+			var writer = new Writer(bytesOutput);
+			writer.write(entries);
+			var zipfileBytes:Bytes = bytesOutput.getBytes();
+			
+			Util.sendReport(request, zipfileBytes);
+		}
 	}
 	
 	private function doErrorStuffByHTTP(e:Dynamic):Void

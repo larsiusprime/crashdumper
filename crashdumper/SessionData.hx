@@ -1,6 +1,7 @@
 package crashdumper;
-import flash.display.Stage;
-import openfl.Lib;
+#if flash
+	import flash.display.Stage;
+#end
 #if (windows || mac || linux)
 	import sys.io.Process;
 #end
@@ -20,27 +21,16 @@ class SessionData
 												// ->for games, this could be the user's save + config data
 												// ->for apps, this could be the user's preferences or other config data
 												
-	#if flash
-	public function new(id_:String,stage_:Stage)
-	#else
-	public function new(id_:String) 
-	#end
+	public function new(id_:String,data:{fileName:String,packageName:String,version:String}) 
 	{
 		id = id_;
 		if (id == null || id == "")
 		{
 			id = generateID();
 		}
-		#if (windows || mac || linux)
-			fileName = Lib.file;
-			packageName = Lib.packageName;
-			version = Lib.version;
-		#elseif flash
-			if (stage_ != null)
-			{
-				fileName = stage_.loaderInfo.url;
-			}
-		#end
+		fileName = data.fileName;
+		packageName = data.packageName;
+		version = data.version;
 		files = new Map<String,String>();
 		startTime = Date.now();
 	}

@@ -1,6 +1,9 @@
 package crashdumper.hooks;
 import crashdumper.hooks.openfl.HookOpenFL;
+import haxe.Http;
+import haxe.io.Bytes;
 import haxe.io.Path;
+import haxe.io.StringInput;
 
 /**
  * ...
@@ -52,6 +55,22 @@ class Util
 		}
 		
 		return str;
+	}
+	
+	public static function sendReport(request:Http,bytes:Bytes):Void
+	{
+		var zipString:String = "";
+		#if (haxe_ver >= "3.1.3")
+			zipString = bytes.getString(0, bytes.length);
+		#else
+			zipString = bytes.readString(0, bytes.length);
+		#end
+		
+		#if !flash
+			var stringInput = new StringInput(zipString);
+			request.fileTransfer("report", "report.zip", stringInput, stringInput.length, "application/octet-stream");
+			request.request(true);
+		#end
 	}
 	
 	public static function slash():String
