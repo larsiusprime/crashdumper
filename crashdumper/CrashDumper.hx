@@ -10,6 +10,7 @@ import haxe.Utf8;
 import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
+import openfl.utils.ByteArray;
 
 import haxe.Http;
 
@@ -314,17 +315,10 @@ class CrashDumper
 				var zipString:String = "";
 				
 				#if (haxe_ver >= "3.1.3")
-					zipfileBytes.getString(0, zipfileBytes.length);
+					zipString = zipfileBytes.getString(0, zipfileBytes.length);
 				#else
-					zipfileBytes.readString(0, zipfileBytes.length);
+					zipString = zipfileBytes.readString(0, zipfileBytes.length);
 				#end
-				
-				if (writeToFile)
-				{
-					var f = File.write(path + pathLogErrors + logdir + "package.zip");
-					f.writeBytes(zipfileBytes, 0, zipfileBytes.length);
-					f.close();
-				}
 				
 				var stringInput = new StringInput(zipString);
 				request.fileTransfer("report", "report.zip", stringInput, stringInput.length, "application/octet-stream");
