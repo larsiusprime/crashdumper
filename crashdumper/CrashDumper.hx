@@ -4,6 +4,7 @@ import haxe.CallStack;
 import haxe.crypto.Crc32;
 import haxe.io.Bytes;
 import haxe.io.BytesOutput;
+import haxe.io.StringInput;
 import haxe.Utf8;
 import haxe.zip.Entry;
 import haxe.zip.Tools;
@@ -318,51 +319,34 @@ class CrashDumper
 					}
 				}
 			}
-		#end
 		
-		if (sendToServer)
-		{
-			var entries:List<Entry> = new List();
-			
-			entries.add(strToZipEntry(errorMessage, "_error"));
-			
-			for (filename in session.files.keys())
+			if (sendToServer)
 			{
-				var filecontent:String = session.files.get(filename);
-				if (filecontent != "" && filecontent != null)
+				var entries:List<Entry> = new List();
+				
+				entries.add(strToZipEntry(errorMessage, "_error"));
+				
+				for (filename in session.files.keys())
 				{
-					entries.add(strToZipEntry(filecontent, filename));
+					var filecontent:String = session.files.get(filename);
+					if (filecontent != "" && filecontent != null)
+					{
+						entries.add(strToZipEntry(filecontent, filename));
+					}
 				}
+				
+				var bytesOutput = new BytesOutput();
+				var writer = new Writer(bytesOutput);
+				writer.write(entries);
+				var zipfileBytes:Bytes = bytesOutput.getBytes();
+				
+				var zipString:String = zipfileBytes.getString(0, zipfileBytes.length);
+				
+				var stringInput = new StringInput(zipString);
+				request.fileTransfer("report", "report.zip", stringInput, stringInput.length, "application/octet-stream");
+				request.request(true);
 			}
-			
-			var bytesOutput = new BytesOutput();
-			var writer = new Writer(bytesOutput);
-			writer.write(entries);
-			var zipfileBytes:Bytes = bytesOutput.getBytes();
-			
-			/*if (writeToFile)
-			{
-				var f = File.write(pathLogErrors+logdir+sl+"package.zip");
-				f.writeBytes(zipfileBytes,0,zipfileBytes.length);
-				f.close();
-			
-				var zipF = File.read(pathLogErrors + logdir + sl + "package.zip");
-				//request.fileTransfer("report", "package.zip", zipF, zipfileBytes.length);
-			}*/
-			
-			/*
-			trace("request = " + request);
-			trace("request.url = " + request.url);
-			trace("report = " + zipfileBytes);
-			*/
-			
-			var zipString:String = zipfileBytes.getString(0, zipfileBytes.length);
-			
-			request.setHeader("Content-Type", "multipart/form-data");
-			request.setParameter("result", errorMessage);
-			request.setParameter("report", zipString);
-			request.request(true);
-		}
+		#end
 	}
 	
 	private function strToZipEntry(str, fileName):Entry
