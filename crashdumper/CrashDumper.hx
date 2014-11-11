@@ -1,5 +1,5 @@
 package crashdumper;
-import crashdumper.hooks.Hook;
+import crashdumper.hooks.Util;
 import crashdumper.hooks.IHookPlatform;
 import haxe.CallStack;
 import haxe.crypto.Crc32;
@@ -80,7 +80,7 @@ class CrashDumper
 	
 	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
 	{
-		hook = Hook.platform();
+		hook = Util.platform();
 		
 		closeOnCrash = closeOnCrash_;
 		postCrashMethod = postCrashMethod_;
@@ -223,11 +223,8 @@ class CrashDumper
 		//Prepend pathLog with a slash character if the user path does not end with a slash character
 		if (path.length >= 0 && path.charAt(path.length - 1) != "/" && path.charAt(path.length - 1) != "\\")
 		{
-			pathLog = Hook.slash() + pathLog;
+			pathLog = Util.slash() + pathLog;
 		}
-		
-		pathLog = fixSlashes(pathLog);
-		pathLogErrors = fixSlashes(pathLogErrors);
 		
 		var errorMessage:String = errorMessageStr();
 		
@@ -241,18 +238,18 @@ class CrashDumper
 		#if sys
 			if (writeToFile)
 			{
-				if (!FileSystem.exists(path + pathLog))
+				if (!FileSystem.exists(Util.pathFix(path + pathLog)))
 				{
 					FileSystem.createDirectory(path + pathLog);
 				}
-				if (!FileSystem.exists(path + pathLogErrors))
+				if (!FileSystem.exists(Util.pathFix(path + pathLogErrors)))
 				{
 					FileSystem.createDirectory(path + pathLogErrors);
 				}
 				
 				var counter:Int = 0;
 				var failsafe:Int = 999;
-				while (FileSystem.exists(path + pathLogErrors + logdir) && failsafe > 0)
+				while (FileSystem.exists(Util.pathFix(path + pathLogErrors + logdir)) && failsafe > 0)
 				{
 					//if the session ID is not unique for some reason, append numbers until it is
 					logdir = session.id + "_CRASH_" + counter + "/";
@@ -262,7 +259,7 @@ class CrashDumper
 				
 				FileSystem.createDirectory(path + pathLogErrors + logdir);
 				
-				if (FileSystem.exists(path + pathLogErrors + logdir))
+				if (FileSystem.exists(Util.pathFix(path + pathLogErrors + logdir)))
 				{
 					uniqueErrorLogPath = path + pathLogErrors + logdir;
 					//write out the error message
@@ -490,22 +487,7 @@ class CrashDumper
 		return stackTrace;
 	}
 	
-	private function fixSlashes(str:String):String{
-		var slash:String = Hook.slash();
-		
-		var otherslash:String = "";
-		if (slash == "/") {
-			otherslash = "\\";
-		}else if(slash == "\\"){
-			otherslash = "/";
-		}
-		
-		//enforce operating system slash style
-		while (str.indexOf(otherslash) != -1) {
-			str = StringTools.replace(str, otherslash, slash);
-		}
-		return str;
-	}
+	
 	
 	private function printStackItem(itm:StackItem):String
 	{
