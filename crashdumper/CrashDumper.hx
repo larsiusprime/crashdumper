@@ -1,5 +1,6 @@
 package crashdumper;
-import flash.display.Stage;
+import crashdumper.hooks.Util;
+import crashdumper.hooks.IHookPlatform;
 import haxe.CallStack;
 import haxe.crypto.Crc32;
 import haxe.io.Bytes;
@@ -9,23 +10,17 @@ import haxe.Utf8;
 import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
-import openfl.system.Capabilities;
-import openfl.utils.ByteArray;
-import openfl.events.UncaughtErrorEvent;
-import openfl.Lib;
 import haxe.Http;
+
+#if flash
+	import flash.display.Stage;
+#end
+
 #if sys
-	import openfl.utils.SystemPath;
 	import sys.FileSystem;
 	import sys.io.File;
 	import sys.io.FileOutput;
 #end
-
-/**
- * TODO:
-	 * Optionally zip up crash reports
-	 * 
- */
 
 /**
  * Listens for uncaught error events and then generates a comprehensive crash report.
@@ -67,23 +62,9 @@ class CrashDumper
 	public static var endl:String = "\n";
 	public static var sl:String = "/";
 	
-	private var theError:Dynamic;
 	
 	public var pathLogErrors(default, null):String;
 	public var uniqueErrorLogPath(default, null):String;
-	
-	public static inline var PATH_APPDATA:String = "%APPDATA%";			//The ApplicationStorageDirectory. Highly recommended.
-	public static inline var PATH_DOCUMENTS:String = "%DOCUMENTS%";		//The Documents directory.
-	public static inline var PATH_USERPROFILE:String = "%USERPROFILE%";	//The User's profile folder
-	public static inline var PATH_DESKTOP:String = "%DESKTOP%";			//The User's desktop
-	public static inline var PATH_APP:String = "%APP%";					//The Application's own directory
-	
-	private var SHOW_LINES:Bool = true;
-	private var SHOW_STACK:Bool = true;
-	
-	private var CACHED_STACK_TRACE:String = "";
-	
-	private static var request:haxe.Http;
 	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
@@ -93,29 +74,32 @@ class CrashDumper
 	 * @param	customDataMethod_	method to call BEFORE a crash dump is created, so you can modify the crashDump object before it outputs
 	 * @param	closeOnCrash_		whether or not to close after a crash dump is created
 	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
+	 * @param	stage_				(flash target only) the root Stage object
 	 */
 	
-	#if flash
-	public function new(sessionId_:String, ?stage_:Stage, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void)
-	#else
-	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void) 
-	#end
+	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
 	{
+		hook = Util.platform();
+		
 		closeOnCrash = closeOnCrash_;
 		postCrashMethod = postCrashMethod_;
 		customDataMethod = customDataMethod_;
 		
 		path = path_;
 		
+		var data = { fileName:hook.fileName, packageName:hook.packageName, version:hook.version };
 		#if flash
-		session = new SessionData(sessionId_, stage_);
-		#else
-		session = new SessionData(sessionId_);
+			data.fileName = stage_.loaderInfo.url;
 		#end
+		
+		session = new SessionData(sessionId_, data);
+		
 		system = new SystemData();
 		
 		endl = SystemData.endl();
 		sl = SystemData.slash();
+		
+		hook.setErrorEvent(onErrorEvent);
 		
 		#if cpp
 			#if !HXCPP_STACK_LINE
@@ -124,15 +108,24 @@ class CrashDumper
 			#if !HXCPP_STACK_TRACE
 				SHOW_STACK = false;
 			#end
-		#end
-		
-		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent);
-		#if cpp
 			untyped __global__.__hxcpp_set_critical_error_handler(onCriticalErrorEvent);
 		#end
+		
 		//set url to "http://localhost:8080/result" for local connections
 		url = url_;
 	}
+	
+	/**********PRIVATE************/
+	
+	private var hook:IHookPlatform;
+	
+	private var theError:Dynamic;
+	private var SHOW_LINES:Bool = true;
+	private var SHOW_STACK:Bool = true;
+	
+	private var CACHED_STACK_TRACE:String = "";
+	
+	private static var request:haxe.Http;
 	
 	private static function onData(msg:String)
 	{
@@ -178,49 +171,22 @@ class CrashDumper
 	
 	public function set_path(str:String):String
 	{
-		#if (windows || mac || linux || mobile)
-			#if (mobile)
-				if (str.charAt(0) != "/" && str.charAt(0) != "\\")
-				{
-					str = "/" + str;
-				}
-				str = SystemPath.applicationStorageDirectory + str;
-			#else
-				switch(str)
-				{
-					case null, "": str = SystemPath.applicationStorageDirectory;
-					case PATH_APPDATA: str = SystemPath.applicationStorageDirectory;
-					case PATH_DOCUMENTS: str = SystemPath.documentsDirectory;
-					case PATH_DESKTOP: str = SystemPath.desktopDirectory;
-					case PATH_USERPROFILE: str = SystemPath.userDirectory;
-					case PATH_APP: str = SystemPath.applicationDirectory;
-				}
-			#end
-			if (str != "")
-			{
-				if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
-				{
-					//if the path is not blank, and the last character is not a slash
-					str = str + SystemData.slash();	//add a trailing slash
-				}
-			}
-		#end
+		str = hook.getFolderPath(str);
 		path = str;
 		return path;
 	}
 
 	/***THE BIG ERROR FUNCTION***/
+	
 	private function onCriticalErrorEvent(message:String):Void {throw message;}
 	private function onErrorEvent(e:Dynamic):Void
 	{
 		CACHED_STACK_TRACE = getStackTrace();
 		
-		#if (windows || mac || linux || mobile)
+		#if !flash
 			doErrorStuff(e);		//easy to separately override
-		#end
-		
-		#if flash
-			doErrorStuffByHTTP(e);
+		#else
+			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
 		
 		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
@@ -241,14 +207,6 @@ class CrashDumper
 	}
 	
 	
-	private function doErrorStuffByHTTP(e:Dynamic):Void
-	{	
-		theError = e;
-		var errorMessage:String = errorMessageStr();
-		request.setParameter("result",errorMessage);
-		request.request(true);
-	}
-	
 	private function doErrorStuff(e:Dynamic,writeToFile:Bool=true,sendToServer:Bool=true):Void
 	{
 		theError = e;
@@ -259,11 +217,8 @@ class CrashDumper
 		//Prepend pathLog with a slash character if the user path does not end with a slash character
 		if (path.length >= 0 && path.charAt(path.length - 1) != "/" && path.charAt(path.length - 1) != "\\")
 		{
-			pathLog = getSlash() + pathLog;
+			pathLog = Util.slash() + pathLog;
 		}
-		
-		pathLog = fixSlashes(pathLog);
-		pathLogErrors = fixSlashes(pathLogErrors);
 		
 		var errorMessage:String = errorMessageStr();
 		
@@ -277,18 +232,18 @@ class CrashDumper
 		#if sys
 			if (writeToFile)
 			{
-				if (!FileSystem.exists(path + pathLog))
+				if (!FileSystem.exists(Util.pathFix(path + pathLog)))
 				{
 					FileSystem.createDirectory(path + pathLog);
 				}
-				if (!FileSystem.exists(path + pathLogErrors))
+				if (!FileSystem.exists(Util.pathFix(path + pathLogErrors)))
 				{
 					FileSystem.createDirectory(path + pathLogErrors);
 				}
 				
 				var counter:Int = 0;
 				var failsafe:Int = 999;
-				while (FileSystem.exists(path + pathLogErrors + logdir) && failsafe > 0)
+				while (FileSystem.exists(Util.pathFix(path + pathLogErrors + logdir)) && failsafe > 0)
 				{
 					//if the session ID is not unique for some reason, append numbers until it is
 					logdir = session.id + "_CRASH_" + counter + "/";
@@ -298,7 +253,7 @@ class CrashDumper
 				
 				FileSystem.createDirectory(path + pathLogErrors + logdir);
 				
-				if (FileSystem.exists(path + pathLogErrors + logdir))
+				if (FileSystem.exists(Util.pathFix(path + pathLogErrors + logdir)))
 				{
 					uniqueErrorLogPath = path + pathLogErrors + logdir;
 					//write out the error message
@@ -319,60 +274,46 @@ class CrashDumper
 					}
 				}
 			}
+		#end
 		
-			if (sendToServer)
+		if (sendToServer)
+		{
+			var entries:List<Entry> = new List();
+			
+			var entry = strToZipEntry(errorMessage, "_error");
+			if (entry != null)
 			{
-				var entries:List<Entry> = new List();
-				
-				entries.add(strToZipEntry(errorMessage, "_error"));
-				
-				for (filename in session.files.keys())
+				entries.add(entry);	
+			}
+			
+			for (filename in session.files.keys())
+			{
+				var filecontent:String = session.files.get(filename);
+				if (filecontent != "" && filecontent != null)
 				{
-					var filecontent:String = session.files.get(filename);
-					if (filecontent != "" && filecontent != null)
+					entry = strToZipEntry(filecontent, filename);
+					if(entry != null)
 					{
-						entries.add(strToZipEntry(filecontent, filename));
+						entries.add(entry);
 					}
 				}
-				
-				var bytesOutput = new BytesOutput();
-				var writer = new Writer(bytesOutput);
-				writer.write(entries);
-				var zipfileBytes:Bytes = bytesOutput.getBytes();
-				
-				var zipString:String = zipfileBytes.getString(0, zipfileBytes.length);
-				
-				var stringInput = new StringInput(zipString);
-				request.fileTransfer("report", "report.zip", stringInput, stringInput.length, "application/octet-stream");
-				request.request(true);
 			}
-		#end
+			
+			var bytesOutput = new BytesOutput();
+			var writer = new Writer(bytesOutput);
+			writer.write(entries);
+			var zipfileBytes:Bytes = bytesOutput.getBytes();
+			
+			Util.sendReport(request, zipfileBytes);
+		}
 	}
 	
-	private function strToZipEntry(str, fileName):Entry
-	{
-		#if !html5
-		#if flash
-			var fbytes:ByteArray = new ByteArray();
-			fbytes.writeUTFBytes(str);
-			var bytes:Bytes = cast fbytes;
-		#else
-			var bytes:ByteArray = new ByteArray();
-			bytes.writeUTFBytes(str);
-		#end
-		var entry:Entry = {
-			fileName : fileName,
-			fileSize : bytes.length,
-			fileTime : Date.now(),
-			compressed : false,
-			dataSize : 0,
-			data : bytes,
-			crc32 : Crc32.make(bytes)
-		}
-		#else
-		var entry = null;
-		#end
-		return entry;
+	private function doErrorStuffByHTTP(e:Dynamic):Void
+	{	
+		theError = e;
+		var errorMessage:String = errorMessageStr();
+		request.setParameter("result",errorMessage);
+		request.request(true);
 	}
 	
 	/**
@@ -390,6 +331,27 @@ class CrashDumper
 		return str1 + str2;
 	}
 	
+	private function strToZipEntry(str, fileName):Entry
+	{
+		var bytes:Bytes = hook.getZipBytes(str);
+		var entry:Entry = null;
+		
+		if (bytes != null)
+		{
+			entry = 
+			{
+				fileName : fileName,
+				fileSize : bytes.length,
+				fileTime : Date.now(),
+				compressed : false,
+				dataSize : 0,
+				data : bytes,
+				crc32 : Crc32.make(bytes)
+			}
+		}
+		
+		return entry;
+	}
 	
 	/*****THESE FUNCTIONS ARE SEPARATED OUT BELOW SO THAT THEY ARE EASY TO OVERRIDE IN SUBCLASSES*****/
 	
@@ -509,39 +471,7 @@ class CrashDumper
 		return stackTrace;
 	}
 	
-	private inline function getSlash():String {
-		#if windows
-			return "\\";
-		#elseif flash
-			if (Capabilities.os.toLowerCase().indexOf("win") != -1)
-			{
-				return "\\";
-			}
-			else
-			{
-				return "/";
-			}
-		#else
-			return "/";
-		#end
-	}
 	
-	private function fixSlashes(str:String):String{
-		var slash:String = getSlash();
-		
-		var otherslash:String = "";
-		if (slash == "/") {
-			otherslash = "\\";
-		}else if(slash == "\\"){
-			otherslash = "/";
-		}
-		
-		//enforce operating system slash style
-		while (str.indexOf(otherslash) != -1) {
-			str = StringTools.replace(str, otherslash, slash);
-		}
-		return str;
-	}
 	
 	private function printStackItem(itm:StackItem):String
 	{
@@ -566,7 +496,11 @@ class CrashDumper
 				str += (cname);
 				str += (".");
 				str += (meth);
+			#if (haxe_ver >= "3.1.0")
 			case LocalFunction(n):
+			#else
+			case Lambda(n):
+			#end
 				str += ("local function #");
 				str += (n);
 		}
