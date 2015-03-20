@@ -36,9 +36,15 @@ class HookOpenFL implements IHookPlatform
 	{
 		#if openfl
 			#if !flash
-				fileName = Lib.file;
-				packageName = Lib.packageName;
-				version = Lib.version;
+				#if lime_legacy
+					fileName = Lib.file;
+					packageName = Lib.packageName;
+					version = Lib.version;
+				#else
+					fileName = "<not available yet in openfl-next>";
+					packageName = "<not available yet in openfl-next>";
+					version = "<not available yet in openfl-next>";
+				#end
 			#end
 		#else
 			throw "OpenFL Library was not detected, using HookOpenFL is therefore impossible!";
@@ -55,15 +61,19 @@ class HookOpenFL implements IHookPlatform
 				}
 				str = SystemPath.applicationStorageDirectory + str;
 			#else
-				switch(str)
-				{
-					case null, "": str = SystemPath.applicationStorageDirectory;
-					case PATH_APPDATA: str = SystemPath.applicationStorageDirectory;
-					case PATH_DOCUMENTS: str = SystemPath.documentsDirectory;
-					case PATH_DESKTOP: str = SystemPath.desktopDirectory;
-					case PATH_USERPROFILE: str = SystemPath.userDirectory;
-					case PATH_APP: str = SystemPath.applicationDirectory;
-				}
+				#if lime_legacy
+					switch(str)
+					{
+						case null, "": str = SystemPath.applicationStorageDirectory;
+						case PATH_APPDATA: str = SystemPath.applicationStorageDirectory;
+						case PATH_DOCUMENTS: str = SystemPath.documentsDirectory;
+						case PATH_DESKTOP: str = SystemPath.desktopDirectory;
+						case PATH_USERPROFILE: str = SystemPath.userDirectory;
+						case PATH_APP: str = SystemPath.applicationDirectory;
+					}
+				#else
+					str = "";
+				#end
 			#end
 			if (str != "")
 			{
