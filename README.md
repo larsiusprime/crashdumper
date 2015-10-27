@@ -79,7 +79,7 @@ We specifically recommend **[Crashdump Browser](https://github.com/larsiusprime/
 Paths
 ============
 
-By default will write to your program's own directory, under `/logs/errors/<SESSION_ID>`.
+By default will write to your program's application storage directory (`SystemPath.applicationStorageDirectory`), under `/logs/errors/<SESSION_ID>`.
 You can supply your own path, of course.
 
 Performance
