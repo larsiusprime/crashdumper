@@ -184,7 +184,7 @@ class CrashDumper
 		CACHED_STACK_TRACE = getStackTrace();
 		
 		#if !flash
-			doErrorStuff(e, path != null, url != null && url != "");		//easy to separately override
+			doErrorStuff(e, path != null && path != "", url != null && url != "");		//easy to separately override
 		#else
 			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
