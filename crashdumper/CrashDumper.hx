@@ -207,7 +207,7 @@ class CrashDumper
 	}
 	
 	
-	private function doErrorStuff(e:Dynamic,writeToFile:Bool=true,sendToServer:Bool=true):Void
+	private function doErrorStuff(e:Dynamic, writeToFile:Bool = true, sendToServer:Bool = true, traceToLog:Bool = true):Void
 	{
 		theError = e;
 		
@@ -228,6 +228,12 @@ class CrashDumper
 		}
 		
 		var logdir:String = session.id + "_CRASH/"; //directory name for this crash
+		
+		if (traceToLog)
+		{
+			trace("CRASH session.id = " + session.id);
+			trace("MESSAGE = " + errorMessage);
+		}
 		
 		#if sys
 			if (writeToFile)
