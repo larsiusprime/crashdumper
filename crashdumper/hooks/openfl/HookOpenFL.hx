@@ -2,6 +2,10 @@ package crashdumper.hooks.openfl;
 import crashdumper.hooks.IHookPlatform;
 import haxe.io.Bytes;
 
+#if !lime_legacy
+	import lime.app.Application;
+#end
+
 #if openfl
 	import openfl.utils.SystemPath;
 #end
@@ -41,9 +45,9 @@ class HookOpenFL implements IHookPlatform
 					packageName = Lib.packageName;
 					version = Lib.version;
 				#else
-					fileName = "<not available yet in openfl-next>";
-					packageName = "<not available yet in openfl-next>";
-					version = "<not available yet in openfl-next>";
+					fileName = Application.current.config.file;
+					packageName = Application.current.config.packageName;
+					version = Application.current.config.version;
 				#end
 			#end
 		#else
