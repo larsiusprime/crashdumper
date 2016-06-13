@@ -15,7 +15,7 @@ define("THEME", "light.css"); // Corresponds to a stylesheet file in the media d
 
 // Errordump identifiers (corresponding to lines in _error.txt)
 define("ERROR_EXCEPTION", "error");
-define("ERROR_PROJECTNAME", "sess. ID");
+define("ERROR_PROJECTNAME", "package");
 define("ERROR_STACK", "stack");
 define("ERROR_TIMESTAMP", "crashed");
 define("ERROR_VERSION", "version");
