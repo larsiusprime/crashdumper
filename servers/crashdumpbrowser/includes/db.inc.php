@@ -161,7 +161,7 @@ class db {
       $params[] = &$perPage;
       $params[0] = &$types;
       if ($stmt = self::$mysqli->prepare($sql)) {
-         call_user_func_array(array($stmt, "bind_param"), &$params);
+         call_user_func_array(array($stmt, "bind_param"), $params);
          return self::query($stmt);
       } else {
          throw new Exception(self::$mysqli->error);
@@ -341,7 +341,7 @@ class db {
       $types .= "ii";
       $params[0] = &$types;
       if ($stmt = self::$mysqli->prepare($sql)) {
-         call_user_func_array(array($stmt, "bind_param"), &$params);
+         call_user_func_array(array($stmt, "bind_param"), $params);
          return self::query($stmt);
       } else {
          throw new Exception(self::$mysqli->error);
