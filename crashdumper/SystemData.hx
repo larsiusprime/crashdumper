@@ -236,24 +236,32 @@ class SystemData
 			//now we have a string we can safely compare against known values
 			osVersion = line;
 			
-			switch(line)
+			//check for windows 10
+			if (osVersion.substr(0, 2) == "10") 
 			{
-				case "3.10.103":	osName = "Windows 3.1";
-				case "4.00.950":	osName = "Windows 95";
-				case "4.00.1111":	osName = "Windows 95 OSR2";
-				case "4.00.1381":	osName = "Windows NT 4.0";
-				case "4.10.1998":	osName = "Windows 98";
-				case "4.10.2222":	osName = "Windows 98 SE";
-				case "4.90.3000":	osName = "Windows ME";
-				case "5.00.2195":	osName = "Windows 2000";
-				case "5.1.2600":	osName = "Windows XP";
-				case "6.0.6000":	osName = "Windows Vista";
-				case "6.0.6002":	osName = "Windows Vista SP2";
-				case "6.1.7600":	osName = "Windows 7";
-				case "6.1.7601":	osName = "Windows 7 SP1";
-				case "6.2.9200":	osName = "Windows 8";
-				case "6.3.9600":	osName = "Windows 8.1";
-				default:			osName = "Windows (unknown version)";
+				osName = checkWindows10Version(osVersion);
+			} 
+			else 
+			{
+				switch(line)
+				{
+					case "3.10.103":	osName = "Windows 3.1";
+					case "4.00.950":	osName = "Windows 95";
+					case "4.00.1111":	osName = "Windows 95 OSR2";
+					case "4.00.1381":	osName = "Windows NT 4.0";
+					case "4.10.1998":	osName = "Windows 98";
+					case "4.10.2222":	osName = "Windows 98 SE";
+					case "4.90.3000":	osName = "Windows ME";
+					case "5.00.2195":	osName = "Windows 2000";
+					case "5.1.2600":	osName = "Windows XP";
+					case "6.0.6000":	osName = "Windows Vista";
+					case "6.0.6002":	osName = "Windows Vista SP2";
+					case "6.1.7600":	osName = "Windows 7";
+					case "6.1.7601":	osName = "Windows 7 SP1";
+					case "6.2.9200":	osName = "Windows 8";
+					case "6.3.9600":	osName = "Windows 8.1";
+					default:			osName = "Windows (unknown version)";
+				}
 			}
 		#elseif linux
 			var temp = line.split("\n");
@@ -265,6 +273,32 @@ class SystemData
 			line = stripEndLines(line);
 			osName = line;
 		#end
+	}
+	
+	private function checkWindows10Version(line:String):String
+	{
+		//the specific windows 10 version is determined by the last number in the string
+		var versionNumber:Int = Std.parseInt(line.substr(line.lastIndexOf(".") + 1));
+		
+		//all versions under 10240 are preview releases
+		if (versionNumber < 10240)
+		{
+			return "Windows 10 (Pre-release)";
+		}
+		//10240 is the original release version
+		else if (versionNumber == 10240) 
+		{
+			return "Windows 10 (TH1)";
+		}
+		//versions up until 10586 are part of the second wave of updates
+		else if (versionNumber > 10240 && versionNumber <= 10586) 
+		{
+			return "Windows 10 (TH2)";
+		}
+		else
+		{
+			return "Windows 10 (Unknown Specific Version)";
+		}
 	}
 	
 	private function processMemory(line:String):Void
