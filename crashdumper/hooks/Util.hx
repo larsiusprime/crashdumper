@@ -66,7 +66,7 @@ class Util
 			zipString = bytes.readString(0, bytes.length);
 		#end
 		
-		#if !flash
+		#if (sys)
 			var stringInput = new StringInput(zipString);
 			request.fileTransfer("report", "report.zip", stringInput, stringInput.length, "application/octet-stream");
 			request.request(true);

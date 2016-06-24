@@ -7,6 +7,7 @@ import flash.display.BitmapData;
 import flash.display.Sprite;
 import haxe.CallStack;
 import openfl.Assets;
+import openfl.events.Event;
 import openfl.events.MouseEvent;
 #if (windows || mac || linux)
 	import openfl.events.UncaughtErrorEvent;
@@ -19,7 +20,6 @@ import openfl.text.TextField;
 
 class Main extends Sprite {
 	
-	
 	public function new () {
 		
 		super ();
@@ -27,6 +27,7 @@ class Main extends Sprite {
 		var t:TextField = new TextField();
 		t.width = stage.stageWidth;
 		t.text = "Click the red square to CRASH!";
+		t.text += "\nRight click the red square to toggle Crashdumper on/off";
 		t.text += "\nA crash dump will be generated in the application's folder under \\log\\errors\\";
 		addChild(t);
 		
@@ -35,7 +36,6 @@ class Main extends Sprite {
 		
 		bitmap.x = (stage.stageWidth - bitmap.width) / 2;
 		bitmap.y = (stage.stageHeight - bitmap.height) / 2;
-		
 		
 		//CrashDumper stuff:
 		
@@ -56,6 +56,14 @@ class Main extends Sprite {
 		
 		//we're set, add event listener
 		addEventListener(MouseEvent.CLICK, onClick);
+		addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
+		addEventListener(Event.ENTER_FRAME, onEnter);
+	}
+	
+	private function onRightClick(m:MouseEvent)
+	{
+		CrashDumper.active = !CrashDumper.active;
+		trace("Crashdumper.active = " + CrashDumper.active);
 	}
 	
 	private function onClick(m:MouseEvent)

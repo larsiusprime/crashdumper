@@ -49,6 +49,8 @@ import haxe.Http;
  */
 class CrashDumper
 {
+	public static var active:Bool=true;	//whether we're actively crashdumping or not
+	
 	public var closeOnCrash:Bool;
 	public var postCrashMethod:CrashDumper->Void;
 	public var customDataMethod:CrashDumper->Void;
@@ -77,7 +79,7 @@ class CrashDumper
 	 * @param	stage_				(flash target only) the root Stage object
 	 */
 	
-	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
+	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", ?closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
 	{
 		hook = Util.platform();
 		
