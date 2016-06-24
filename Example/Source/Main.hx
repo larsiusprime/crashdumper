@@ -57,7 +57,6 @@ class Main extends Sprite {
 		//we're set, add event listener
 		addEventListener(MouseEvent.CLICK, onClick);
 		addEventListener(MouseEvent.RIGHT_CLICK, onRightClick);
-		addEventListener(Event.ENTER_FRAME, onEnter);
 	}
 	
 	private function onRightClick(m:MouseEvent)
