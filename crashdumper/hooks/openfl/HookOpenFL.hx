@@ -4,7 +4,6 @@ import haxe.io.Bytes;
 
 #if !lime_legacy
 	import lime.app.Application;
-#elseif lime
 	import lime.system.System;
 #end
 
