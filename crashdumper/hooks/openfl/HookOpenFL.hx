@@ -4,6 +4,8 @@ import haxe.io.Bytes;
 
 #if !lime_legacy
 	import lime.app.Application;
+#elseif lime
+	import lime.system.System;
 #end
 
 #if openfl
@@ -59,11 +61,11 @@ class HookOpenFL implements IHookPlatform
 	{
 		#if (windows || mac || linux || mobile)
 			#if (mobile)
-				if (str.charAt(0) != "/" && str.charAt(0) != "\\")
+				if (!Util.isFirstChar(str, "/") && !Util.isFirstChar("\\"))
 				{
-					str = "/" + str;
+					str = Util.uCombine("/" + str);
 				}
-				str = SystemPath.applicationStorageDirectory + str;
+				str = Util.uCombine([SystemPath.applicationStorageDirectory,str]);
 			#else
 				#if lime_legacy
 					switch(str)
@@ -76,21 +78,24 @@ class HookOpenFL implements IHookPlatform
 						case PATH_APP: str = SystemPath.applicationDirectory;
 					}
 				#else
-					str = "";
+					switch(str)
+					{
+						case null, "": str = System.applicationStorageDirectory;
+						case PATH_APPDATA: str = System.applicationStorageDirectory;
+						case PATH_DOCUMENTS: str = System.documentsDirectory;
+						case PATH_DESKTOP: str = System.desktopDirectory;
+						case PATH_USERPROFILE: str = System.userDirectory;
+						case PATH_APP: str = System.applicationDirectory;
+					}
 				#end
 			#end
 			if (str != "")
 			{
-				if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
-				{
-					//if the path is not blank, and the last character is not a slash
-					str = str + SystemData.slash();	//add a trailing slash
-				}
+				str = Util.fixTrailingSlash(str);
 			}
 		#end
 		return str;
 	}
-	
 	public function setErrorEvent(onErrorEvent:Dynamic->Void)
 	{
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent);
