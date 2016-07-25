@@ -468,7 +468,9 @@ class CrashDumper
 	{
 		var stackTrace:String = "";
 		var stack:Array<StackItem> = CallStack.exceptionStack();
+		#if flash
 		stack.reverse();
+		#end
 		var item:StackItem;
 		for (item in stack)
 		{
