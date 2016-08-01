@@ -41,9 +41,9 @@ class HookOpenFL implements IHookPlatform
 					packageName = Lib.packageName;
 					version = Lib.version;
 				#else
-					fileName = "<not available yet in openfl-next>";
-					packageName = "<not available yet in openfl-next>";
-					version = "<not available yet in openfl-next>";
+					fileName = Lib.current.stage.application.config.file;
+					packageName = Lib.current.stage.application.config.packageName;
+					version = Lib.current.stage.application.config.version;
 				#end
 			#end
 		#else
