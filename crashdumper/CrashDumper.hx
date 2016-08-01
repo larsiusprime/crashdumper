@@ -189,7 +189,7 @@ class CrashDumper
 			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
 		
-		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
+		if(Reflect.hasField(e, "__isCancelled")) e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
 		
 		if (closeOnCrash)
 		{
