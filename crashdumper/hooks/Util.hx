@@ -83,21 +83,26 @@ class Util
 	
 	public static function fixTrailingSlash(str:String):String
 	{
-		Sys.println("fixTrailingSlash = " + str);
-		#if unifill
-		var ulength = Unifill.uLength(str);
-		if (Unifill.uLastIndexOf(str,"/") != ulength - 1 && Unifill.uLastIndexOf(str,"\\") != ulength - 1)
-		{
-			str = uCombine([str, SystemData.slash()]);
+		var origStr = str;
+		try{
+			#if unifill
+			var ulength = Unifill.uLength(str);
+			if (Unifill.uLastIndexOf(str,"/") != ulength - 1 && Unifill.uLastIndexOf(str,"\\") != ulength - 1)
+			{
+				str = uCombine([str, SystemData.slash()]);
+			}
+			#else
+			if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
+			{
+				//if the path is not blank, and the last character is not a slash
+				str = str + SystemData.slash();	//add a trailing slash
+			}
+			#end
 		}
-		#else
-		if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
+		catch (msg:Dynamic)
 		{
-			//if the path is not blank, and the last character is not a slash
-			str = str + SystemData.slash();	//add a trailing slash
+			return origStr;
 		}
-		#end
-		Sys.println("now = " + str);
 		return str;
 	}
 	
