@@ -2,10 +2,6 @@ package crashdumper.hooks.openfl;
 import crashdumper.hooks.IHookPlatform;
 import haxe.io.Bytes;
 
-#if openfl
-	import openfl.utils.SystemPath;
-#end
-
 #if (openfl >= "2.0.0")
 	import openfl.Lib;
 	import openfl.utils.ByteArray;
@@ -14,6 +10,13 @@ import haxe.io.Bytes;
 	import nme.Lib;
 	import nme.utils.ByteArray;
 	import flash.events.UncaughtErrorEvent;
+#end
+
+#if openfl_legacy
+	import openfl.utils.SystemPath;
+#else
+	import lime.app.Application;
+	typedef SystemPath = lime.system.System;
 #end
 
 /**
@@ -41,9 +44,9 @@ class HookOpenFL implements IHookPlatform
 					packageName = Lib.packageName;
 					version = Lib.version;
 				#else
-					fileName = "<not available yet in openfl-next>";
-					packageName = "<not available yet in openfl-next>";
-					version = "<not available yet in openfl-next>";
+					fileName = Application.current.config.file;
+					packageName = Application.current.config.packageName;
+					version = Application.current.config.version;
 				#end
 			#end
 		#else
@@ -61,19 +64,15 @@ class HookOpenFL implements IHookPlatform
 				}
 				str = SystemPath.applicationStorageDirectory + str;
 			#else
-				#if lime_legacy
-					switch(str)
-					{
-						case null, "": str = SystemPath.applicationStorageDirectory;
-						case PATH_APPDATA: str = SystemPath.applicationStorageDirectory;
-						case PATH_DOCUMENTS: str = SystemPath.documentsDirectory;
-						case PATH_DESKTOP: str = SystemPath.desktopDirectory;
-						case PATH_USERPROFILE: str = SystemPath.userDirectory;
-						case PATH_APP: str = SystemPath.applicationDirectory;
-					}
-				#else
-					str = "";
-				#end
+				switch(str)
+				{
+					case null, "": str = SystemPath.applicationStorageDirectory;
+					case PATH_APPDATA: str = SystemPath.applicationStorageDirectory;
+					case PATH_DOCUMENTS: str = SystemPath.documentsDirectory;
+					case PATH_DESKTOP: str = SystemPath.desktopDirectory;
+					case PATH_USERPROFILE: str = SystemPath.userDirectory;
+					case PATH_APP: str = SystemPath.applicationDirectory;
+				}
 			#end
 			if (str != "")
 			{
