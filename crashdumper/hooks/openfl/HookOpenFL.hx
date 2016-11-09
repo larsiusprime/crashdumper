@@ -40,6 +40,8 @@ class HookOpenFL implements IHookPlatform
 	public static inline var PATH_DESKTOP:String = "%DESKTOP%";			//The User's desktop
 	public static inline var PATH_APP:String = "%APP%";					//The Application's own directory
 	
+	private var errorEvent:Dynamic->Void;
+	
 	public function new() 
 	{
 		#if openfl
@@ -86,9 +88,20 @@ class HookOpenFL implements IHookPlatform
 		#end
 		return str;
 	}
+	
 	public function setErrorEvent(onErrorEvent:Dynamic->Void)
 	{
+		errorEvent = onErrorEvent;
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent);
+	}
+	
+	public function disable()
+	{
+		if (errorEvent != null)
+		{
+			trace("DISABLE ERROR EVENT");
+			Lib.current.loaderInfo.uncaughtErrorEvents.removeEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, errorEvent);
+		}
 	}
 	
 	public function getZipBytes(str):Bytes

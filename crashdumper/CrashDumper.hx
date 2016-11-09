@@ -88,6 +88,9 @@ class CrashDumper
 		postCrashMethod = postCrashMethod_;
 		customDataMethod = customDataMethod_;
 		
+		endl = SystemData.endl();
+		sl = SystemData.slash();
+		
 		path = path_;
 		
 		var data = { fileName:hook.fileName, packageName:hook.packageName, version:hook.version };
@@ -180,17 +183,6 @@ class CrashDumper
 	private function onErrorEvent(e:Dynamic):Void
 	{
 		CACHED_STACK_TRACE = getStackTrace();
-		
-		try{
-			system = new SystemData();
-		}
-		catch (msg:String)
-		{
-			trace("error during crashdump : " + msg);
-		}
-		
-		endl = SystemData.endl();
-		sl = SystemData.slash();
 		
 		#if !flash
 			doErrorStuff(e);		//easy to separately override
@@ -390,6 +382,18 @@ class CrashDumper
 	
 	public function errorMessageStr():String
 	{
+		if (system == null)
+		{
+			try
+			{
+				system = new SystemData();
+			}
+			catch (msg:String)
+			{
+				trace("error during crashdump : " + msg);
+			}
+		}
+		
 		var str:String = "";
 		str = systemStr();
 		str = endlConcat(str, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
@@ -427,6 +431,7 @@ class CrashDumper
 	 */
 	
 	private function systemStr():String {
+		
 		return system.summary();
 	}
 	
