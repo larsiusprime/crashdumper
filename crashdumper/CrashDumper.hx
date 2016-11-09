@@ -97,11 +97,6 @@ class CrashDumper
 		
 		session = new SessionData(sessionId_, data);
 		
-		system = new SystemData();
-		
-		endl = SystemData.endl();
-		sl = SystemData.slash();
-		
 		hook.setErrorEvent(onErrorEvent);
 		
 		#if cpp
@@ -185,6 +180,17 @@ class CrashDumper
 	private function onErrorEvent(e:Dynamic):Void
 	{
 		CACHED_STACK_TRACE = getStackTrace();
+		
+		try{
+			system = new SystemData();
+		}
+		catch (msg:String)
+		{
+			trace("error during crashdump : " + msg);
+		}
+		
+		endl = SystemData.endl();
+		sl = SystemData.slash();
 		
 		#if !flash
 			doErrorStuff(e);		//easy to separately override
