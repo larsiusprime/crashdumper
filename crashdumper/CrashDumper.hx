@@ -77,7 +77,7 @@ class CrashDumper
 	 * @param	stage_				(flash target only) the root Stage object
 	 */
 	
-	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
+	public function new(sessionId_:String, ?path_:String="./", ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
 	{
 		hook = Util.platform();
 		
@@ -184,7 +184,7 @@ class CrashDumper
 		CACHED_STACK_TRACE = getStackTrace();
 		
 		#if !flash
-			doErrorStuff(e);		//easy to separately override
+			doErrorStuff(e, path != null && path != "", url != null && url != "");		//easy to separately override
 		#else
 			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
@@ -268,7 +268,8 @@ class CrashDumper
 					f.close();
 					
 					var sanityCheck:String = File.getContent(path + pathLogErrors + logdir + "_error.txt");
-					
+					trace("Dumpfile saved: \n" + FileSystem.fullPath(uniqueErrorLogPath+ "_error.txt"));
+
 					//write out all our associated game session files
 					for (filename in session.files.keys())
 					{
