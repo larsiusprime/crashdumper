@@ -192,7 +192,7 @@ class CrashDumper
 		
 		if (Std.is(e, Event))
 		{
-			#if sys
+			#if (sys && !display)
 			@:privateAccess cast(e, Event).__isCanceled = true; //cancel the event. We control exiting from here on out.
 			#end
 		}
