@@ -6,6 +6,7 @@ import haxe.io.Bytes;
 	import openfl.Lib;
 	import openfl.utils.ByteArray;
 	import openfl.events.UncaughtErrorEvent;
+	import crashdumper.hooks.Util;
 #else
 	import nme.Lib;
 	import nme.utils.ByteArray;
@@ -43,10 +44,14 @@ class HookOpenFL implements IHookPlatform
 					fileName = Lib.file;
 					packageName = Lib.packageName;
 					version = Lib.version;
-				#else
+				#elseif (lime < "7.0.0")
 					fileName = Application.current.config.file;
 					packageName = Application.current.config.packageName;
 					version = Application.current.config.version;
+				#else
+					fileName = Application.current.meta.get("file");
+					packageName = Application.current.meta.get("packageName");
+					version = Util.getProjectVersion("project.xml");
 				#end
 			#end
 		#else
