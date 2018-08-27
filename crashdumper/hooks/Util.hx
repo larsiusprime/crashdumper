@@ -4,6 +4,7 @@ import haxe.Http;
 import haxe.io.Bytes;
 import haxe.io.Path;
 import haxe.io.StringInput;
+import haxe.macro.Context;
 
 /**
  * ...
@@ -91,4 +92,17 @@ class Util
 			return "/";
 		#end
 	}
+
+	macro public static function getProjectVersion(path:String) {
+        try {
+            var p = Context.resolvePath(path);
+            var s:String = sys.io.File.getContent(p);
+            var r = new EReg('<\\s?app[^>]*?\\sversion="([.\\d]+)"[^>]*?>', "i");
+            if (r.match(s)) return macro $v{r.matched(1)};
+            else return Context.error('No version found in xml file', Context.currentPos());
+        }
+        catch(e:Dynamic) {
+            return Context.error('Failed to load file $path: $e', Context.currentPos());
+        }
+    }
 }
