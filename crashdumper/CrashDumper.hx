@@ -189,7 +189,11 @@ class CrashDumper
 			doErrorStuffByHTTP(e);	//minimal flash error report
 		#end
 		
-		e.__isCancelled = true;		//cancel the event. We control exiting from here on out.
+		//cancel the event. We control exiting from here on out.
+		if(Std.is(e, openfl.events.Event)) 
+		{
+			e.stopImmediatePropagation();
+		}
 		
 		if (closeOnCrash)
 		{
