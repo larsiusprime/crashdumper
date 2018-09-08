@@ -11,6 +11,7 @@ import haxe.zip.Entry;
 import haxe.zip.Tools;
 import haxe.zip.Writer;
 import haxe.Http;
+import openfl.events.Event;
 
 #if flash
 	import flash.display.Stage;
@@ -49,6 +50,8 @@ import haxe.Http;
  */
 class CrashDumper
 {
+	public static var active:Bool=true;	//whether we're actively crashdumping or not
+	
 	public var closeOnCrash:Bool;
 	public var postCrashMethod:CrashDumper->Void;
 	public var customDataMethod:CrashDumper->Void;
@@ -77,13 +80,16 @@ class CrashDumper
 	 * @param	stage_				(flash target only) the root Stage object
 	 */
 	
-	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
+	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", ?closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
 	{
 		hook = Util.platform();
 		
 		closeOnCrash = closeOnCrash_;
 		postCrashMethod = postCrashMethod_;
 		customDataMethod = customDataMethod_;
+		
+		endl = SystemData.endl();
+		sl = SystemData.slash();
 		
 		path = path_;
 		
@@ -93,11 +99,6 @@ class CrashDumper
 		#end
 		
 		session = new SessionData(sessionId_, data);
-		
-		system = new SystemData();
-		
-		endl = SystemData.endl();
-		sl = SystemData.slash();
 		
 		hook.setErrorEvent(onErrorEvent);
 		
@@ -239,21 +240,25 @@ class CrashDumper
 			trace("MESSAGE = " + errorMessage);
 		}
 		
+		var path2Log = Util.uPath([path, pathLog]);
+		var path2LogErrors = Util.uPath([path, pathLogErrors]);
+		var path2LogErrorsDir = Util.uPath([path, pathLogErrors, logdir]);
+		
 		#if sys
 			if (writeToFile)
 			{
-				if (!FileSystem.exists(Util.pathFix(path + pathLog)))
+				if (!FileSystem.exists(path2Log))
 				{
-					FileSystem.createDirectory(path + pathLog);
+					FileSystem.createDirectory(path2Log);
 				}
-				if (!FileSystem.exists(Util.pathFix(path + pathLogErrors)))
+				if (!FileSystem.exists(path2LogErrors))
 				{
-					FileSystem.createDirectory(path + pathLogErrors);
+					FileSystem.createDirectory(path2LogErrors);
 				}
 				
 				var counter:Int = 0;
 				var failsafe:Int = 999;
-				while (FileSystem.exists(Util.pathFix(path + pathLogErrors + logdir)) && failsafe > 0)
+				while (FileSystem.exists(path2LogErrorsDir) && failsafe > 0)
 				{
 					//if the session ID is not unique for some reason, append numbers until it is
 					logdir = session.id + "_CRASH_" + counter + "/";
@@ -261,17 +266,20 @@ class CrashDumper
 					failsafe--;
 				}
 				
-				FileSystem.createDirectory(path + pathLogErrors + logdir);
+				FileSystem.createDirectory(path2LogErrorsDir);
 				
-				if (FileSystem.exists(Util.pathFix(path + pathLogErrors + logdir)))
+				if (FileSystem.exists(path2LogErrorsDir))
 				{
-					uniqueErrorLogPath = path + pathLogErrors + logdir;
+					uniqueErrorLogPath = path2LogErrorsDir;
 					//write out the error message
-					var f:FileOutput = File.write(path + pathLogErrors + logdir + "_error.txt");
+					
+					var outPath = Util.uPath([path2LogErrors, logdir, "_error.txt"]);
+					
+					var f:FileOutput = File.write(outPath);
 					f.writeString(errorMessage);
 					f.close();
 					
-					var sanityCheck:String = File.getContent(path + pathLogErrors + logdir + "_error.txt");
+					var sanityCheck:String = File.getContent(outPath);
 					
 					//write out all our associated game session files
 					for (filename in session.files.keys())
@@ -279,7 +287,8 @@ class CrashDumper
 						var filecontent:String = session.files.get(filename);
 						if (filecontent != "" && filecontent != null)
 						{
-							logFile(pathLogErrors + logdir + filename, filecontent);
+							var fileOut = Util.uPath([pathLogErrors, logdir, filename]);
+							logFile(fileOut, filecontent);
 						}
 					}
 				}
@@ -372,6 +381,18 @@ class CrashDumper
 	
 	public function errorMessageStr():String
 	{
+		if (system == null)
+		{
+			try
+			{
+				system = new SystemData();
+			}
+			catch (msg:String)
+			{
+				trace("error during crashdump : " + msg);
+			}
+		}
+		
 		var str:String = "";
 		str = systemStr();
 		str = endlConcat(str, sessionStr());		//we separate the output into three blocks so it's easy to override them with your own customized output
@@ -386,12 +407,22 @@ class CrashDumper
 	#if sys
 		private function logFile(filename:String, content:String):Void
 		{
-			var f = File.write(path + filename);
+			filename = getSafeFilename(path, filename);
+			var f = File.write(filename);
 			f.writeString(content);
 			f.close();
 		}
 	#end
 	
+	private function getSafeFilename(path:String, filename:String):String
+	{
+		var lastIsSlash = false;
+
+		
+		filename = lastIsSlash ? Util.uCombine([path, filename]) : Util.uCombine([path, "/", filename]);
+		
+		return filename;
+	}
 	
 	/**
 	 * Outputs basic information about the user's system
@@ -399,6 +430,7 @@ class CrashDumper
 	 */
 	
 	private function systemStr():String {
+		
 		return system.summary();
 	}
 	

@@ -2,6 +2,11 @@ package crashdumper.hooks.openfl;
 import crashdumper.hooks.IHookPlatform;
 import haxe.io.Bytes;
 
+#if !lime_legacy
+	import lime.app.Application;
+	import lime.system.System;
+#end
+
 #if (openfl >= "2.0.0")
 	import openfl.Lib;
 	import openfl.utils.ByteArray;
@@ -36,6 +41,8 @@ class HookOpenFL implements IHookPlatform
 	public static inline var PATH_DESKTOP:String = "%DESKTOP%";			//The User's desktop
 	public static inline var PATH_APP:String = "%APP%";					//The Application's own directory
 	
+	private var errorEvent:Dynamic->Void;
+	
 	public function new() 
 	{
 		#if openfl
@@ -63,11 +70,11 @@ class HookOpenFL implements IHookPlatform
 	{
 		#if (windows || mac || linux || mobile)
 			#if (mobile)
-				if (str.charAt(0) != "/" && str.charAt(0) != "\\")
+				if (!Util.isFirstChar(str, "/") && !Util.isFirstChar("\\"))
 				{
-					str = "/" + str;
+					str = Util.uCombine("/" + str);
 				}
-				str = SystemPath.applicationStorageDirectory + str;
+				str = Util.uCombine([SystemPath.applicationStorageDirectory,str]);
 			#else
 				switch(str)
 				{
@@ -81,11 +88,7 @@ class HookOpenFL implements IHookPlatform
 			#end
 			if (str != "")
 			{
-				if (str.lastIndexOf("/") != str.length - 1 && str.lastIndexOf("\\") != str.length - 1)
-				{
-					//if the path is not blank, and the last character is not a slash
-					str = str + SystemData.slash();	//add a trailing slash
-				}
+				str = Util.fixTrailingSlash(str);
 			}
 		#end
 		return str;
@@ -93,7 +96,17 @@ class HookOpenFL implements IHookPlatform
 	
 	public function setErrorEvent(onErrorEvent:Dynamic->Void)
 	{
+		errorEvent = onErrorEvent;
 		Lib.current.loaderInfo.uncaughtErrorEvents.addEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, onErrorEvent);
+	}
+	
+	public function disable()
+	{
+		if (errorEvent != null)
+		{
+			trace("DISABLE ERROR EVENT");
+			Lib.current.loaderInfo.uncaughtErrorEvents.removeEventListener(UncaughtErrorEvent.UNCAUGHT_ERROR, errorEvent);
+		}
 	}
 	
 	public function getZipBytes(str):Bytes

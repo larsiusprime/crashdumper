@@ -51,8 +51,6 @@ class SystemData
 			gpuDriverVersion = "unknown";
 		#end
 		
-		
-		
 		try {
 			#if windows
 				runProcess("crashdumper/os.bat", [], processOS);

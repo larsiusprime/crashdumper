@@ -15,4 +15,6 @@ interface IHookPlatform
 	public function getZipBytes(str:String):Bytes;
 	public function getFolderPath(str:String):String;
 	public function setErrorEvent(onErrorEvent:Dynamic->Void):Void;
+	
+	public function disable():Void;
 }
