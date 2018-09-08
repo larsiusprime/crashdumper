@@ -246,7 +246,8 @@ class Util
             var s:String = sys.io.File.getContent(p);
             var r = new EReg('<\\s?app[^>]*?\\sversion="([.\\d]+)"[^>]*?>', "i");
             if (r.match(s)) return macro $v{r.matched(1)};
-            else return Context.error('No version found in xml file', Context.currentPos());
+			else return macro $v{""};
+            //else return Context.error('No version found in xml file', Context.currentPos());
         }
         catch(e:Dynamic) {
             return Context.error('Failed to load file $path: $e', Context.currentPos());
