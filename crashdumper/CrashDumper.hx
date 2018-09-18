@@ -179,9 +179,14 @@ class CrashDumper
 
 	/***THE BIG ERROR FUNCTION***/
 	
-	private function onCriticalErrorEvent(message:String):Void {throw message;}
+	private function onCriticalErrorEvent(message:String):Void
+	{
+		if(!CrashDumper.active) return;
+		throw message;
+	}
 	private function onErrorEvent(e:Dynamic):Void
 	{
+		if(!CrashDumper.active) return;
 		CACHED_STACK_TRACE = getStackTrace();
 		
 		#if !flash
@@ -214,6 +219,7 @@ class CrashDumper
 	
 	private function doErrorStuff(e:Dynamic, writeToFile:Bool = true, sendToServer:Bool = true, traceToLog:Bool = true):Void
 	{
+		if(!CrashDumper.active) return;
 		theError = e;
 		
 		var pathLog:String = "log/";				//  path/to/log/
