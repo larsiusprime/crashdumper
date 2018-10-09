@@ -55,6 +55,7 @@ class CrashDumper
 	public var closeOnCrash:Bool;
 	public var postCrashMethod:CrashDumper->Void;
 	public var customDataMethod:CrashDumper->Void;
+	public var collectSystemData:Bool;
 	
 	public var session:SessionData;
 	public var system:SystemData;
@@ -76,15 +77,17 @@ class CrashDumper
 	 * @param	url					url you want to send the crash dump to. If empty or null, no connection is made.
 	 * @param	customDataMethod_	method to call BEFORE a crash dump is created, so you can modify the crashDump object before it outputs
 	 * @param	closeOnCrash_		whether or not to close after a crash dump is created
+	 * @param	collectSystemData_	whether or not to gather system data (causes some cmd windows to pop open on first launch, which sometimes annoys users, so disable it if you like)
 	 * @param	postCrashMethod_	method to call AFTER a crash dump is created if closeOnCrash is false
 	 * @param	stage_				(flash target only) the root Stage object
 	 */
 	
-	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", ?closeOnCrash_:Bool = true, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
+	public function new(sessionId_:String, ?path_:String, ?url_:String="http://localhost:8080/result", ?closeOnCrash_:Bool = true, ?collectSystemData_:Bool = false, ?customDataMethod_:CrashDumper->Void, ?postCrashMethod_:CrashDumper->Void, ?stage_:Dynamic) 
 	{
 		hook = Util.platform();
 		
 		closeOnCrash = closeOnCrash_;
+		collectSystemData = collectSystemData_;
 		postCrashMethod = postCrashMethod_;
 		customDataMethod = customDataMethod_;
 		
@@ -387,7 +390,7 @@ class CrashDumper
 	
 	public function errorMessageStr():String
 	{
-		if (system == null)
+		if (system == null && collectSystemData)
 		{
 			try
 			{
@@ -437,6 +440,7 @@ class CrashDumper
 	
 	private function systemStr():String {
 		
+		if(!collectSystemData) return "";
 		return system.summary();
 	}
 	
