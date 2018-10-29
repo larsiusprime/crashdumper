@@ -70,9 +70,9 @@ class HookOpenFL implements IHookPlatform
 	{
 		#if (windows || mac || linux || mobile)
 			#if (mobile)
-				if (!Util.isFirstChar(str, "/") && !Util.isFirstChar("\\"))
+				if (!Util.isFirstChar(str, "/") && !Util.isFirstChar(str, "\\"))
 				{
-					str = Util.uCombine("/" + str);
+					str = Util.uCombine(["/", str]);
 				}
 				str = Util.uCombine([SystemPath.applicationStorageDirectory,str]);
 			#else
