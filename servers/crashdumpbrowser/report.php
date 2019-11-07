@@ -52,7 +52,6 @@ while($zipfile = zip_read($zip)) {
             $function = trim(substr($line, 0, $separator - 1));
             $file = preg_replace('/.*\\(([^)]*)\\).*/', '\\1', $line);
             $file = str_replace(" line ", ":", $file);
-            $readStack = false;
             continue;
          }
          $separator = strpos($line, ":");
