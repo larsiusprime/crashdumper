@@ -3,21 +3,27 @@ import crashdumper.hooks.IHookPlatform;
 import haxe.io.Bytes;
 
 #if !lime_legacy
-import lime.app.Application;
-import lime.system.System;
+	import lime.app.Application;
+	import lime.system.System;
 #end
 
 #if (openfl >= "2.0.0")
-import openfl.Lib;
-import openfl.utils.ByteArray;
-import openfl.events.UncaughtErrorEvent;
-import crashdumper.hooks.Util;
+	import openfl.Lib;
+	import openfl.utils.ByteArray;
+	import openfl.events.UncaughtErrorEvent;
+	import crashdumper.hooks.Util;
 #else
-import nme.Lib;
-import nme.utils.ByteArray;
-import flash.events.UncaughtErrorEvent;
-#end 
+	import nme.Lib;
+	import nme.utils.ByteArray;
+	import flash.events.UncaughtErrorEvent;
+#end
 
+#if openfl_legacy
+	import openfl.utils.SystemPath;
+#else
+	import lime.app.Application;
+	typedef SystemPath = lime.system.System;
+#end
 
 /**
  * ...
