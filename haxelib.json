@@ -4,9 +4,9 @@
  "license": "MIT",
  "tags": ["crash","debug","error","log"],
  "description": "Automated crash report generator for OpenFL apps",
- "version": "0.0.1",
+ "version": "0.0.3",
  "releasenote": "Pre-alpha release",
- "contributors": ["larsiusprime"],
+ "contributors": ["larsiusprime, Jonnycat"],
  "dependencies": { 
   "openfl": ""
  }

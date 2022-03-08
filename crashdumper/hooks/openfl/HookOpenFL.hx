@@ -58,7 +58,7 @@ class HookOpenFL implements IHookPlatform
 				#else
 					fileName = Application.current.meta.get("file");
 					packageName = Application.current.meta.get("packageName");
-					version = Util.getProjectVersion("project.xml");
+					version = Util.getProjectVersion("Project.xml");
 				#end
 			#end
 		#else
@@ -70,9 +70,9 @@ class HookOpenFL implements IHookPlatform
 	{
 		#if (windows || mac || linux || mobile)
 			#if (mobile)
-				if (!Util.isFirstChar(str, "/") && !Util.isFirstChar("\\"))
+				if (!Util.isFirstChar(str, "/") && !Util.isFirstChar(str, "\\"))
 				{
-					str = Util.uCombine("/" + str);
+					str = Util.uCombine(["/", str]);
 				}
 				str = Util.uCombine([SystemPath.applicationStorageDirectory,str]);
 			#else

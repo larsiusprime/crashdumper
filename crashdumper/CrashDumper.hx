@@ -14,13 +14,13 @@ import haxe.Http;
 import openfl.events.Event;
 
 #if flash
-	import flash.display.Stage;
+import flash.display.Stage;
 #end
 
 #if sys
-	import sys.FileSystem;
-	import sys.io.File;
-	import sys.io.FileOutput;
+import sys.FileSystem;
+import sys.io.File;
+import sys.io.FileOutput;
 #end
 
 /**
@@ -67,8 +67,8 @@ class CrashDumper
 	public static var sl:String = "/";
 	
 	
-	public var pathLogErrors(default, null):String;
-	public var uniqueErrorLogPath(default, null):String;
+	public var pathLogErrors:String;
+	public var uniqueErrorLogPath:String;
 	
 	/**
 	 * Creates a new CrashDumper that will listen for uncaught error events and properly handle the crash
