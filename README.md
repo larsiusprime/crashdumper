@@ -10,7 +10,7 @@ Setup
      
      Command Line:
      ````
-     haxelib git crashdumper http://github.com/larsiusprime/crashdumper
+     haxelib git crashdumper https://github.com/McJonnycat/crashdumper
      ````
   2. Include crashdumper in your project.xml:  
      
