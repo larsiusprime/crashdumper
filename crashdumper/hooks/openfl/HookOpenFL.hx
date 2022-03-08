@@ -17,9 +17,7 @@ import haxe.io.Bytes;
 	import nme.utils.ByteArray;
 	import flash.events.UncaughtErrorEvent;
 #end
-
-#if openfl_legacy
-	import openfl.utils.SystemPath;
+	
 #else
 	import lime.app.Application;
 	typedef SystemPath = lime.system.System;
