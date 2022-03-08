@@ -16,12 +16,8 @@ import crashdumper.hooks.Util;
 import nme.Lib;
 import nme.utils.ByteArray;
 import flash.events.UncaughtErrorEvent;
-#end
-	
-#else
-import lime.app.Application;
-typedef SystemPath = lime.system.System;
-#end
+#end 
+
 
 /**
  * ...
