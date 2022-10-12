@@ -199,7 +199,7 @@ class CrashDumper
 		#end
 		
 		//cancel the event. We control exiting from here on out.
-		if(Std.is(e, openfl.events.Event)) 
+		if(#if (haxe_ver >= 4.2) Std.isOfType #else Std.is #end(e, openfl.events.Event)) 
 		{
 			e.stopImmediatePropagation();
 		}
